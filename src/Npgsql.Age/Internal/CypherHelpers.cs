@@ -9,16 +9,19 @@ namespace Npgsql.Age.Internal
         internal static string GenerateAsPart(string cypher)
         {
             // Extract the return part of the Cypher query
-            Match match = Regex.Match(
+            MatchCollection matches = Regex.Matches(
                 cypher.Replace("\n", " ").Replace("\r", " "),
-                @"RETURN\s+(.*?)(?:\s+LIMIT|\s+SKIP|\s+ORDER|[\[{]|$)",
+                @"RETURN\s+((?:(?![""\[{]).)*?)(?=\s*(?:LIMIT|SKIP|ORDER|\s*$))",
                 RegexOptions.IgnoreCase
             );
 
-            if (!match.Success)
+            if (matches.Count == 0)
             {
                 return "(result agtype)";
             }
+
+            // Take the last match
+            var match = matches[^1];
 
             // Split the return values
             var returnValues = match.Groups[1].Value.Split(',');

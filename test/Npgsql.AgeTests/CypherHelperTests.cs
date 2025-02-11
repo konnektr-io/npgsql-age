@@ -118,6 +118,35 @@ LIMIT 10";
         }
 
         [Fact]
+        public void GenerateAsPart_HandlesMatchingKeywordsInQuery()
+        {
+            string cypher =
+                @"WITH '{""dtId"":""abc"",""name"":""return\n\\""\'limit""'}'::agtype as twin
+            MERGE (t: Twin {{`$dtId`: 'abc'}})
+            SET t = twin";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(result agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HandlesComplexUnwindQuery()
+        {
+            string cypher =
+                """UNWIND ['{\"id\":\"dtmi:com:arcadis:app:Query;2\",\"model\":{\"@id\":\"dtmi:com:arcadis:app:Query;2\",\"@type\":\"Interface\",\"displayName\":\"Query\",\"@context\":[\"dtmi:dtdl:context;3\",\"dtmi:dtdl:extension:quantitativeTypes;1\"],\"contents\":[{\"@type\":\"Property\",\"name\":\"twinId\",\"displayName\":{\"en\":\"Twin ID\"},\"description\":\"The related twin Id to fetch viewer data\",\"schema\":\"string\",\"comment\":\"category:Configuration;twinSelectSingle\",\"writable\":true},{\"@type\":\"Property\",\"name\":\"name\",\"displayName\":{\"en\":\"Name\"},\"schema\":\"string\",\"comment\":\"category:Configuration\",\"writable\":true},{\"@type\":\"Property\",\"name\":\"queryKind\",\"displayName\":{\"en\":\"Query type\"},\"schema\":{\"@type\":\"Enum\",\"valueSchema\":\"string\",\"enumValues\":[{\"name\":\"adt\",\"enumValue\":\"adt\",\"displayName\":{\"en\":\"Azure Digital Twins (SQL)\"},\"description\":\"A static ADT query, or a JEXL expression preceded by an equal sign that evaluates to a valid ADT query.\"},{\"name\":\"adx\",\"enumValue\":\"adx\",\"displayName\":{\"en\":\"Azure Data Explorer (KQL)\"},\"description\":\"Parameters are can be used in the query using the variable name preceded by an underscore.\"}]},\"description\":{\"en\":\"The query that should return full twins.\"},\"comment\":\"category:Configuration\",\"writable\":true},{\"@type\":\"Property\",\"name\":\"query\",\"displayName\":{\"en\":\"Query\"},\"comment\":\"category:Configuration;textarea\",\"schema\":\"string\",\"writable\":true}]},\"uploadTime\":\"2025-02-11T07:23:06.2912676+00:00\",\"displayName\":{\"en\":\"Query\"},\"description\":{},\"decommissioned\":false}'] as model\n WITH model::agtype as modelAgtype\n CREATE (m:Model {id: modelAgtype['id']})\n SET m = modelAgtype\n RETURN m""";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(m agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HandlesComplexUnwindQueryWithoutReturn()
+        {
+            string cypher =
+                """UNWIND ['{\"id\":\"dtmi:com:arcadis:app:Query;2\",\"model\":{\"@id\":\"dtmi:com:arcadis:app:Query;2\",\"@type\":\"Interface\",\"displayName\":\"Query\",\"@context\":[\"dtmi:dtdl:context;3\",\"dtmi:dtdl:extension:quantitativeTypes;1\"],\"contents\":[{\"@type\":\"Property\",\"name\":\"twinId\",\"displayName\":{\"en\":\"Twin ID\"},\"description\":\"The related twin Id to fetch viewer data\",\"schema\":\"string\",\"comment\":\"category:Configuration;twinSelectSingle\",\"writable\":true},{\"@type\":\"Property\",\"name\":\"name\",\"displayName\":{\"en\":\"Name\"},\"schema\":\"string\",\"comment\":\"category:Configuration\",\"writable\":true},{\"@type\":\"Property\",\"name\":\"queryKind\",\"displayName\":{\"en\":\"Query type\"},\"schema\":{\"@type\":\"Enum\",\"valueSchema\":\"string\",\"enumValues\":[{\"name\":\"adt\",\"enumValue\":\"adt\",\"displayName\":{\"en\":\"Azure Digital Twins (SQL)\"},\"description\":\"A static ADT query, or a JEXL expression preceded by an equal sign that evaluates to a valid ADT query.\"},{\"name\":\"adx\",\"enumValue\":\"adx\",\"displayName\":{\"en\":\"Azure Data Explorer (KQL)\"},\"description\":\"Parameters are can be used in the query using the variable name preceded by an underscore.\"}]},\"description\":{\"en\":\"The query that should return full twins.\"},\"comment\":\"category:Configuration\",\"writable\":true},{\"@type\":\"Property\",\"name\":\"query\",\"displayName\":{\"en\":\"Query\"},\"comment\":\"category:Configuration;textarea\",\"schema\":\"string\",\"writable\":true}]},\"uploadTime\":\"2025-02-11T07:23:06.2912676+00:00\",\"displayName\":{\"en\":\"Query\"},\"description\":{},\"decommissioned\":false}'] as model\n WITH model::agtype as modelAgtype\n CREATE (m:Model {id: modelAgtype['id']})\n SET m = modelAgtype""";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(result agtype)", result);
+        }
+
+        [Fact]
         public void EscapeCypher_EscapesBackslashes()
         {
             string cypher =
@@ -133,17 +162,6 @@ LIMIT 10";
             RETURN t",
                 result
             );
-        }
-
-        [Fact]
-        public void EscapeCypher_HandlesMatchingKeywordsInQuery()
-        {
-            string cypher =
-                @"WITH '{""dtId"":""abc"",""name"":""return\n\\""\'limit""'}'::agtype as twin
-            MERGE (t: Twin {{`$dtId`: 'abc'}})
-            SET t = twin";
-            string result = CypherHelpers.GenerateAsPart(cypher);
-            Assert.Equal("(result agtype)", result);
         }
     }
 }
