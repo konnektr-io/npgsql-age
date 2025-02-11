@@ -134,5 +134,16 @@ LIMIT 10";
                 result
             );
         }
+
+        [Fact]
+        public void EscapeCypher_HandlesMatchingKeywordsInQuery()
+        {
+            string cypher =
+                @"WITH '{""dtId"":""abc"",""name"":""return\n\\""\'limit""'}'::agtype as twin
+            MERGE (t: Twin {{`$dtId`: 'abc'}})
+            SET t = twin";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(result agtype)", result);
+        }
     }
 }
