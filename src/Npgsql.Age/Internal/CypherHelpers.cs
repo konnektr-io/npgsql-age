@@ -11,7 +11,7 @@ namespace Npgsql.Age.Internal
             // Extract the return part of the Cypher query
             MatchCollection matches = Regex.Matches(
                 cypher.Replace("\n", " ").Replace("\r", " "),
-                @"RETURN\s+((?:(?![""\[{]).)*?)(?=\s*(?:LIMIT|SKIP|ORDER|\s*$))",
+                @"RETURN\s+(.+?)(?=\s*(?:RETURN|LIMIT|SKIP|ORDER|$))",
                 RegexOptions.IgnoreCase
             );
 
@@ -20,11 +20,23 @@ namespace Npgsql.Age.Internal
                 return "(result agtype)";
             }
 
-            // Take the last match
+            // Take the last match that is at the end of the query
             var match = matches[^1];
 
-            // Split the return values
-            var returnValues = match.Groups[1].Value.Split(',');
+            // There is no return statement, and the query has the 'return' word somewhere else
+            if (
+                Regex.IsMatch(
+                    match.Groups[1].Value,
+                    @"\b(CREATE|MATCH|SET|WITH|REMOVE|DELETE)\b",
+                    RegexOptions.IgnoreCase
+                )
+            )
+            {
+                return "(result agtype)";
+            }
+
+            // Extract the return values while avoiding splitting inside {} or []
+            var returnValues = SplitReturnValues(match.Groups[1].Value);
 
             // Dictionary to track occurrences of column names
             var columnNames = new Dictionary<string, int>();
@@ -35,7 +47,24 @@ namespace Npgsql.Age.Internal
                 returnValues.Select(
                     (value, index) =>
                     {
-                        var trimmedValue = value.Trim().TrimStart('$');
+                        var trimmedValue = value.Trim();
+
+                        // Handle objects and arrays without aliases
+                        if (trimmedValue.StartsWith("{") || trimmedValue.StartsWith("["))
+                        {
+                            // Check for alias
+                            var aliasMatch = Regex.Match(
+                                trimmedValue,
+                                @"AS\s+(\w+)",
+                                RegexOptions.IgnoreCase
+                            );
+                            if (aliasMatch.Success)
+                            {
+                                return $"{aliasMatch.Groups[1].Value} agtype";
+                            }
+                            return "result agtype";
+                        }
+
                         // Detect numbers and replace them with 'num'
                         if (
                             int.TryParse(trimmedValue, out _)
@@ -44,19 +73,33 @@ namespace Npgsql.Age.Internal
                         {
                             trimmedValue = $"num";
                         }
+
                         // Detect function calls (like count(*)) and use the function name as the column name
                         if (Regex.IsMatch(trimmedValue, @"\w+\(.*\)"))
                         {
-                            var exprName = Regex.Match(trimmedValue, @"\w+").Value; // TODO: use index or something when there are multiple of the same $"{exprName}{index} agtype";
+                            var exprName = Regex.Match(trimmedValue, @"\w+").Value;
                             trimmedValue = exprName;
                         }
+
                         // Use the last part for property accessors (with dots)
                         if (trimmedValue.Contains('.'))
                         {
                             trimmedValue = trimmedValue.Split('.').Last();
                         }
+
+                        // Handle square bracket property accessors (like n[0] or n['name'])
+                        if (trimmedValue.Contains('['))
+                        {
+                            var match = Regex.Match(trimmedValue, @"\['(.*?)'\]");
+                            if (match.Success)
+                            {
+                                trimmedValue = match.Groups[1].Value;
+                            }
+                        }
+
                         // Trim backticks
                         trimmedValue = trimmedValue.Trim('`');
+
                         // Handle aliases
                         var aliasPattern = @"\s+AS\s+";
                         if (Regex.IsMatch(trimmedValue, aliasPattern, RegexOptions.IgnoreCase))
@@ -65,8 +108,10 @@ namespace Npgsql.Age.Internal
                                 .Split(trimmedValue, aliasPattern, RegexOptions.IgnoreCase)
                                 .Last();
                         }
+
                         // Replace special characters with underscores
                         var sanitizedValue = Regex.Replace(trimmedValue, @"[^\w]", "_");
+
                         // Handle duplicate column names
                         if (columnNames.ContainsKey(sanitizedValue))
                         {
@@ -77,8 +122,13 @@ namespace Npgsql.Age.Internal
                         {
                             columnNames[sanitizedValue] = 0;
                         }
-                        // Quote column names if they contain uppercase letters
-                        if (sanitizedValue.Any(char.IsUpper))
+
+                        // Quote column names if they contain uppercase letters, special characters, or start with a dollar sign
+                        if (value.Contains('['))
+                        {
+                            sanitizedValue = $"\"{trimmedValue}\"";
+                        }
+                        else if (sanitizedValue.Any(char.IsUpper) || sanitizedValue.StartsWith("$"))
                         {
                             sanitizedValue = $"\"{sanitizedValue}\"";
                         }
@@ -96,6 +146,43 @@ namespace Npgsql.Age.Internal
             cypher = Regex.Replace(cypher, @"\\(?!')", "\\\\");
 
             return cypher;
+        }
+
+        // Helper method to split return values while avoiding splitting inside {} or []
+        private static List<string> SplitReturnValues(string returnPart)
+        {
+            var result = new List<string>();
+            var current = new List<char>();
+            int braceCount = 0,
+                bracketCount = 0;
+
+            foreach (var c in returnPart)
+            {
+                if (c == ',' && braceCount == 0 && bracketCount == 0)
+                {
+                    result.Add(new string(current.ToArray()).Trim());
+                    current.Clear();
+                }
+                else
+                {
+                    if (c == '{')
+                        braceCount++;
+                    if (c == '}')
+                        braceCount--;
+                    if (c == '[')
+                        bracketCount++;
+                    if (c == ']')
+                        bracketCount--;
+                    current.Add(c);
+                }
+            }
+
+            if (current.Count > 0)
+            {
+                result.Add(new string(current.ToArray()).Trim());
+            }
+
+            return result;
         }
     }
 }

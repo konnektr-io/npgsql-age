@@ -45,11 +45,52 @@ namespace Npgsql.AgeTests
         }
 
         [Fact]
+        public void GenerateAsPart_WithObjectReturn()
+        {
+            string cypher = "MATCH (n) RETURN {name: n.name, age: n.age}";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(result agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_WithObjectReturnWithAlias()
+        {
+            string cypher = "MATCH (n) RETURN {name: n.name, age: n.age} AS person";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(person agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_WithArrayReturn()
+        {
+            string cypher = "MATCH (n) RETURN [n.name, n.age]";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(result agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_WithCombinedAliasedReturn()
+        {
+            string cypher =
+                "MATCH (n) RETURN [n.name, n.age] AS personArray, {name: n.name, age: n.age} AS personObject, n.name AS name";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(personArray agtype, personObject agtype, name agtype)", result);
+        }
+
+        [Fact]
         public void GenerateAsPart_WithFunctionCall()
         {
             string cypher = "MATCH (n) RETURN count(n)";
             string result = CypherHelpers.GenerateAsPart(cypher);
             Assert.Equal("(count agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_WithOrderBy()
+        {
+            string cypher = "MATCH (n) RETURN n ORDER BY n.name";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(n agtype)", result);
         }
 
         [Fact]
@@ -82,6 +123,14 @@ namespace Npgsql.AgeTests
             string cypher = "MATCH (n) RETURN n.name, n.name";
             string result = CypherHelpers.GenerateAsPart(cypher);
             Assert.Equal("(name agtype, name1 agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_WithSquareBracketColumnNames()
+        {
+            string cypher = "MATCH (n) RETURN n['$id'], n['name'], n['age']";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(\"$id\" agtype, \"name\" agtype, \"age\" agtype)", result);
         }
 
         [Fact]
