@@ -102,6 +102,14 @@ namespace Npgsql.AgeTests
         }
 
         [Fact]
+        public void GenerateAsPart_WithSquareBracketColumnNamesAndAlias()
+        {
+            string cypher = "MATCH (n) RETURN n['test'] AS Name";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(\"Name\" agtype)", result);
+        }
+
+        [Fact]
         public void GenerateAsPart_WithNumbers()
         {
             string cypher = "MATCH (n) RETURN 123, 45.67";
@@ -139,6 +147,14 @@ namespace Npgsql.AgeTests
             string cypher = "MATCH (n) RETURN n.Name, n.Age";
             string result = CypherHelpers.GenerateAsPart(cypher);
             Assert.Equal("(\"Name\" agtype, \"Age\" agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_WithMixedReturns()
+        {
+            string cypher = "MATCH (n) RETURN n['id'] AS Name, 123, n.age AS Age, n['email']";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(\"Name\" agtype, num agtype, \"Age\" agtype, \"email\" agtype)", result);
         }
 
         [Fact]

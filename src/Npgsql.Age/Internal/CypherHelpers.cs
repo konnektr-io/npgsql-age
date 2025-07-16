@@ -81,32 +81,34 @@ namespace Npgsql.Age.Internal
                             trimmedValue = exprName;
                         }
 
-                        // Use the last part for property accessors (with dots)
-                        if (trimmedValue.Contains('.'))
-                        {
-                            trimmedValue = trimmedValue.Split('.').Last();
-                        }
-
-                        // Handle square bracket property accessors (like n[0] or n['name'])
-                        if (trimmedValue.Contains('['))
-                        {
-                            var match = Regex.Match(trimmedValue, @"\['(.*?)'\]");
-                            if (match.Success)
-                            {
-                                trimmedValue = match.Groups[1].Value;
-                            }
-                        }
-
-                        // Trim backticks
-                        trimmedValue = trimmedValue.Trim('`');
-
-                        // Handle aliases
+                        // Handle aliases first
                         var aliasPattern = @"\s+AS\s+";
                         if (Regex.IsMatch(trimmedValue, aliasPattern, RegexOptions.IgnoreCase))
                         {
                             trimmedValue = Regex
                                 .Split(trimmedValue, aliasPattern, RegexOptions.IgnoreCase)
                                 .Last();
+                        }
+                        else
+                        {
+                            // Use the last part for property accessors (with dots)
+                            if (trimmedValue.Contains('.'))
+                            {
+                                trimmedValue = trimmedValue.Split('.').Last();
+                            }
+
+                            // Handle square bracket property accessors (like n[0] or n['name'])
+                            if (trimmedValue.Contains('['))
+                            {
+                                var match = Regex.Match(trimmedValue, @"\['(.*?)'\]");
+                                if (match.Success)
+                                {
+                                    trimmedValue = match.Groups[1].Value;
+                                }
+                            }
+
+                            // Trim backticks
+                            trimmedValue = trimmedValue.Trim('`');
                         }
 
                         // Replace special characters with underscores
