@@ -24,7 +24,7 @@ public class TestBase
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(
             connectionStringBuilder.ConnectionString
         );
-        _dataSource = dataSourceBuilder.UseAge(true).Build();
+        _dataSource = dataSourceBuilder.UseAge().Build();
     }
 
     public void Dispose()
