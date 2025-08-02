@@ -13,39 +13,31 @@ jobs:
       matrix:
         dotnet-version: ["6.0.x", "7.0.x", "8.0.x"]
     steps:
-      - name: Get latest commit id of PostgreSQL 16
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start PostgreSQL with AGE extension
         run: |
-          echo "PG_COMMIT_HASH=$(git ls-remote git://git.postgresql.org/git/postgresql.git refs/heads/REL_16_STABLE | awk '{print $1}')" >> $GITHUB_ENV
+          docker run --name postgres-test \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            -e POSTGRES_DB=agedotnet_tests \
+            -p 5432:5432 \
+            -d apache/age:PG16_latest
 
-      - name: Cache PostgreSQL 16 with AGE installed
-        uses: actions/cache@v3
-        id: pg16cache
-        with:
-          path: ~/pg16
-          key: ${{ runner.os }}-v1-pg16-${{ env.PG_COMMIT_HASH }}
-
-      - name: Get latest commit id of Apache AGE for PG 16
+      - name: Wait for PostgreSQL to be ready
         run: |
-          echo "AGE_COMMIT_HASH=$(git ls-remote https://github.com/apache/age.git refs/heads/release/PG16/1.5.0 | awk '{print $1}')" >> $GITHUB_ENV
-
-      - name: Install PostgreSQL 16 and AGE, create default user and databases
-        if: steps.pg16cache.outputs.cache-hit != 'true'
-        run: |
-          git clone --depth 1 --branch REL_16_STABLE git://git.postgresql.org/git/postgresql.git ~/pg16source
-          cd ~/pg16source
-          ./configure --prefix=$HOME/pg16 CFLAGS="-std=gnu99 -ggdb -O0" --enable-cassert
-          make install -j$(nproc) > /dev/null
-          git clone --depth 1 --branch release/PG16/1.5.0 https://github.com/apache/age.git ~/age16source
-          cd ~/age16source
-          make PG_CONFIG=$HOME/pg16/bin/pg_config install
-          cd ~/pg16
-          mkdir data
-          bin/initdb -D data
-          bin/pg_ctl -D data -l logfile start
-          bin/createuser -s postgres
-          bin/createdb -O "postgres" agedotnet_tests
-
-      - uses: actions/checkout@v4
+          for i in {1..30}; do
+            if docker exec postgres-test pg_isready -U postgres -d agedotnet_tests; then
+              echo "PostgreSQL is ready";
+              sleep 5;
+              exit 0;
+            fi;
+            echo "Waiting for PostgreSQL...";
+            sleep 5;
+          done
+          echo "PostgreSQL did not become ready in time";
+          exit 1;
 
       - name: Setup .NET ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v4
@@ -72,3 +64,9 @@ jobs:
           path: TestResults-${{ matrix.dotnet-version }}
         # Use always() to always run this step to publish test results when there are test failures
         if: ${{ always() }}
+
+      - name: Stop PostgreSQL container
+        if: always()
+        run: |
+          docker stop postgres-test || true
+          docker rm postgres-test || true
