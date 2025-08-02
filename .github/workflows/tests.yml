@@ -23,7 +23,7 @@ jobs:
             -e POSTGRES_PASSWORD=postgres \
             -e POSTGRES_DB=agedotnet_tests \
             -p 5432:5432 \
-            -d apache/age:PG16_latest
+            -d apache/age:release_PG16_1.5.0
 
       - name: Wait for PostgreSQL to be ready
         run: |
