@@ -44,7 +44,7 @@ public class AgeIntegrationTests : TestBase
 
         await using var connection = await DataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(
-            $@"SELECT * FROM cypher('{graphname}', $$
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
     RETURN NULL
 $$) as (value agtype);",
             connection
@@ -66,7 +66,7 @@ $$) as (value agtype);",
 
         await using var connection = await DataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(
-            $@"SELECT * FROM cypher('{graphname}', $$
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
         RETURN 'Infinity'::float
     $$) as (value agtype);",
             connection
@@ -88,7 +88,7 @@ $$) as (value agtype);",
 
         await using var connection = await DataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(
-            $@"SELECT * FROM cypher('{graphname}', $$
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
             RETURN 'NaN'::float
         $$) as (value agtype);",
             connection
@@ -113,7 +113,7 @@ $$) as (value agtype);",
 
         await using var connection = await DataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(
-            $@"SELECT * FROM cypher('{graphname}', $$
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
             WITH {{id: {id}, label: ""{label}"", properties: {{i: {i}}}}}::vertex as v
             RETURN v
         $$) as (value agtype);",
@@ -141,7 +141,7 @@ $$) as (value agtype);",
 
         await using var connection = await DataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(
-            $@"SELECT * FROM cypher('{graphname}', $$
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
             WITH [1, 2, 3, 2, NULL] AS list
             RETURN list
         $$) as (value agtype);",
