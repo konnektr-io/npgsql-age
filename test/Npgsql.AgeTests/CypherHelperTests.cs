@@ -212,6 +212,22 @@ LIMIT 10";
         }
 
         [Fact]
+        public void GenerateAsPart_HansdlesFunctionsInReturn()
+        {
+            string cypher = "MATCH (n) RETURN count(n) AS totalCount";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(\"totalCount\" agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HansdlesFunctionsInReturn2()
+        {
+            string cypher = "MATCH (n) RETURN coalesce(n.name,'User') AS userName";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(\"userName\" agtype)", result);
+        }
+
+        [Fact]
         public void EscapeCypher_EscapesBackslashes()
         {
             string cypher =

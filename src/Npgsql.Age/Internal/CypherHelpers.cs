@@ -74,14 +74,7 @@ namespace Npgsql.Age.Internal
                             trimmedValue = $"num";
                         }
 
-                        // Detect function calls (like count(*)) and use the function name as the column name
-                        if (Regex.IsMatch(trimmedValue, @"\w+\(.*\)"))
-                        {
-                            var exprName = Regex.Match(trimmedValue, @"\w+").Value;
-                            trimmedValue = exprName;
-                        }
-
-                        // Handle aliases first
+                        // Handle aliases first (before function detection to preserve alias information)
                         var aliasPattern = @"\s+AS\s+";
                         if (Regex.IsMatch(trimmedValue, aliasPattern, RegexOptions.IgnoreCase))
                         {
@@ -91,14 +84,19 @@ namespace Npgsql.Age.Internal
                         }
                         else
                         {
+                            // Detect function calls (like count(*)) and use the function name as the column name
+                            if (Regex.IsMatch(trimmedValue, @"\w+\(.*\)"))
+                            {
+                                var exprName = Regex.Match(trimmedValue, @"\w+").Value;
+                                trimmedValue = exprName;
+                            }
                             // Use the last part for property accessors (with dots)
-                            if (trimmedValue.Contains('.'))
+                            else if (trimmedValue.Contains('.'))
                             {
                                 trimmedValue = trimmedValue.Split('.').Last();
                             }
-
                             // Handle square bracket property accessors (like n[0] or n['name'])
-                            if (trimmedValue.Contains('['))
+                            else if (trimmedValue.Contains('['))
                             {
                                 var match = Regex.Match(trimmedValue, @"\['(.*?)'\]");
                                 if (match.Success)
@@ -150,17 +148,18 @@ namespace Npgsql.Age.Internal
             return cypher;
         }
 
-        // Helper method to split return values while avoiding splitting inside {} or []
+        // Helper method to split return values while avoiding splitting inside {} or [] or ()
         private static List<string> SplitReturnValues(string returnPart)
         {
             var result = new List<string>();
             var current = new List<char>();
             int braceCount = 0,
-                bracketCount = 0;
+                bracketCount = 0,
+                parenthesesCount = 0;
 
             foreach (var c in returnPart)
             {
-                if (c == ',' && braceCount == 0 && bracketCount == 0)
+                if (c == ',' && braceCount == 0 && bracketCount == 0 && parenthesesCount == 0)
                 {
                     result.Add(new string(current.ToArray()).Trim());
                     current.Clear();
@@ -175,6 +174,10 @@ namespace Npgsql.Age.Internal
                         bracketCount++;
                     if (c == ']')
                         bracketCount--;
+                    if (c == '(')
+                        parenthesesCount++;
+                    if (c == ')')
+                        parenthesesCount--;
                     current.Add(c);
                 }
             }
