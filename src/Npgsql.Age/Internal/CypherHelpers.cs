@@ -8,9 +8,15 @@ namespace Npgsql.Age.Internal
     {
         internal static string GenerateAsPart(string cypher)
         {
-            // Extract the return part of the Cypher query
+            // Pre-process the query to temporarily replace string literals with placeholders
+            // This prevents matching RETURN statements inside string literals
+            var processedCypher = ReplaceStringLiterals(
+                cypher.Replace("\n", " ").Replace("\r", " ")
+            );
+
+            // Extract the return part of the Cypher query using the processed version
             MatchCollection matches = Regex.Matches(
-                cypher.Replace("\n", " ").Replace("\r", " "),
+                processedCypher,
                 @"RETURN\s+(.+?)(?=\s*(?:RETURN|LIMIT|SKIP|ORDER|$))",
                 RegexOptions.IgnoreCase
             );
@@ -35,8 +41,19 @@ namespace Npgsql.Age.Internal
                 return "(result agtype)";
             }
 
-            // Extract the return values while avoiding splitting inside {} or []
-            var returnValues = SplitReturnValues(match.Groups[1].Value);
+            // Now get the original return part from the unprocessed cypher for actual processing
+            var originalCypher = cypher.Replace("\n", " ").Replace("\r", " ");
+            var originalMatches = Regex.Matches(
+                originalCypher,
+                @"RETURN\s+(.+?)(?=\s*(?:RETURN|LIMIT|SKIP|ORDER|$))",
+                RegexOptions.IgnoreCase
+            );
+
+            // Use the same index from the original matches
+            var originalMatch = originalMatches[^1];
+
+            // Extract the return values from the original (unprocessed) query
+            var returnValues = SplitReturnValues(originalMatch.Groups[1].Value);
 
             // Dictionary to track occurrences of column names
             var columnNames = new Dictionary<string, int>();
@@ -145,6 +162,16 @@ namespace Npgsql.Age.Internal
             // Escape backslashes
             cypher = Regex.Replace(cypher, @"\\(?!')", "\\\\");
 
+            return cypher;
+        }
+
+        // Helper method to replace string literals with placeholders to avoid matching content inside strings
+        private static string ReplaceStringLiterals(string cypher)
+        {
+            // Replace single-quoted strings
+            cypher = Regex.Replace(cypher, @"'(?:[^'\\]|\\.)*'", "PLACEHOLDER_STRING");
+            // Replace double-quoted strings
+            cypher = Regex.Replace(cypher, @"""(?:[^""\\]|\\.)*""", "PLACEHOLDER_STRING");
             return cypher;
         }
 
