@@ -39,8 +39,7 @@ namespace Npgsql.Age.Internal
                 mappings.AddStructType<Agtype>(
                     AgtypeDataTypeName,
                     static (options, mapping, _) =>
-                        mapping.CreateInfo(options, new AgtypeConverter()),
-                    MatchRequirement.DataTypeName
+                        mapping.CreateInfo(options, new AgtypeConverter())
                 );
 
                 return mappings;

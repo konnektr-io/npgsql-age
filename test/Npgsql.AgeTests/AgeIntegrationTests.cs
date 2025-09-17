@@ -223,6 +223,7 @@ $$) as (value agtype);",
         );
         command.Parameters.AddWithValue("Alice");
         command.Parameters.AddWithValue(25);
+        await command.PrepareAsync();
         await using var dataReader = await command.ExecuteReaderAsync();
 
         Assert.NotNull(dataReader);
@@ -259,6 +260,7 @@ $$) as (value agtype);",
             "MATCH (p:Person) WHERE p.name = $name AND p.age > $minAge RETURN p.name, p.age",
             parameters
         );
+        await command.PrepareAsync();
         await using var dataReader = await command.ExecuteReaderAsync();
 
         Assert.NotNull(dataReader);
