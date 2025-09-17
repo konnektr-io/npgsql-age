@@ -220,7 +220,7 @@ LIMIT 10";
         }
 
         [Fact]
-        public void GenerateAsPart_HanndlesFunctionsInReturn2()
+        public void GenerateAsPart_HandlesFunctionsInReturn2()
         {
             string cypher = "MATCH (n) RETURN coalesce(n.name,'User') AS userName";
             string result = CypherHelpers.GenerateAsPart(cypher);
