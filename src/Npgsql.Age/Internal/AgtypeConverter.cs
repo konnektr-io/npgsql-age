@@ -43,8 +43,8 @@ namespace Npgsql.Age.Internal
         /// <param name="value"></param>
         protected override void WriteCore(PgWriter writer, Agtype value)
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(value.GetString());
-            writer.WriteBytes(bytes);
+            var chars = value.GetString().ToCharArray();
+            writer.WriteChars(chars, Encoding.UTF8);
         }
     }
 #pragma warning restore NPG9001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
