@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json;
 using Npgsql.Age.Internal;
+using Npgsql.Age.Types;
 
 namespace Npgsql.Age
 {
@@ -122,7 +123,7 @@ namespace Npgsql.Age
                 $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$, $1) as {CypherHelpers.GenerateAsPart(cypher)};";
             return new NpgsqlCommand(query, connection)
             {
-                Parameters = { new NpgsqlParameter { Value = parametersJson } },
+                Parameters = { new NpgsqlParameter { Value = new Agtype(parametersJson) } },
             };
         }
     }
