@@ -19,6 +19,7 @@ namespace Npgsql.Age
         )
         {
             builder.AddTypeInfoResolverFactory(new AgtypeResolverFactory());
+            builder.MapComposite<Agtype>();
             builder.UsePhysicalConnectionInitializer(
                 connection =>
                     ConnectionInitializer.UsePhysicalConnectionInitializer(
