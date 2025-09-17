@@ -212,6 +212,63 @@ LIMIT 10";
         }
 
         [Fact]
+        public void GenerateAsPart_HansdlesFunctionsInReturn()
+        {
+            string cypher = "MATCH (n) RETURN count(n) AS totalCount";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(\"totalCount\" agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HandlesFunctionsInReturn2()
+        {
+            string cypher = "MATCH (n) RETURN coalesce(n.name,'User') AS userName";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(\"userName\" agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HandlesReturnInNestedStringWithReturnStatement()
+        {
+            string cypher =
+                @"MATCH (n) WHERE n.description = 'This string contains the word RETURN but is not a real return statement.' RETURN n";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(n agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HandlesReturnInNestedStringWithoutActualReturnStatement()
+        {
+            string cypher =
+                @"MATCH (n) WHERE n.description = 'This string contains the word RETURN but is not a real return statement.' SET n.value = 'LIMIT 10'";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(result agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HandlesComplexReturnInNestedStringWithoutActualReturnStatement()
+        {
+            string cypher =
+                @"WITH '{""$dtId"":""523ecdd2-6f5d-4d60-9e77-11de6061583f"",""query"":""MATCH (current:Twin)-[*1..2]->(T:Twin) WHERE current[\'$dtId\']= \'@_selectedAssessementGroupId\' AND (digitaltwins.is_of_model(T,\'dtmi:com:arcadis:climaterisk:Asset;1\')) RETURN T.$dtId as Id, T.name as Name ORDER BY Name ASC""}'::agtype as twin
+MERGE (t: Twin {`$dtId`: '523ecdd2-6f5d-4d60-9e77-11de6061583f'})
+SET t = twin";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(result agtype)", result);
+        }
+
+        [Fact]
+        public void GenerateAsPart_HandlesComplexReturnInNestedStringWithReturnStatement()
+        {
+            string cypher =
+                @"WITH '{""$dtId"":""523ecdd2-6f5d-4d60-9e77-11de6061583f"",""query"":""MATCH (current:Twin)-[*1..2]->(T:Twin) WHERE current[\'$dtId\']= \'@_selectedAssessementGroupId\' AND (digitaltwins.is_of_model(T,\'dtmi:com:arcadis:climaterisk:Asset;1\')) RETURN T.$dtId as Id, T.name as Name ORDER BY Name ASC""}'::agtype as twin
+MERGE (t: Twin {`$dtId`: '523ecdd2-6f5d-4d60-9e77-11de6061583f'})
+SET t = twin
+RETURN t";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(t agtype)", result);
+        }
+
+        [Fact]
         public void EscapeCypher_EscapesBackslashes()
         {
             string cypher =
