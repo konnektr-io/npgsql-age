@@ -17,6 +17,12 @@ namespace Npgsql.Age.Internal
             return format is DataFormat.Text || format is DataFormat.Binary;
         }
 
+        public override Size GetSize(SizeContext context, Agtype value, ref object? writeState)
+        {
+            var str = value.GetString();
+            return Encoding.UTF8.GetByteCount(str);
+        }
+
         /// <summary>
         /// Read agtype from its binary representation.
         /// </summary>
