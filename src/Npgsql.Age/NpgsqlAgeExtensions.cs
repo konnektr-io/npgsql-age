@@ -93,7 +93,7 @@ namespace Npgsql.Age
         /// <param name="cypher">The Cypher query with parameter placeholders (e.g., $name)</param>
         /// <param name="parameters">Dictionary of parameter names and values</param>
         /// <returns>An NpgsqlCommand ready for execution</returns>
-        public static NpgsqlCommand CreateCypherCommand(
+        /* public static NpgsqlCommand CreateCypherCommand(
             this NpgsqlConnection connection,
             string graphName,
             string cypher,
@@ -102,7 +102,7 @@ namespace Npgsql.Age
         {
             string parametersJson = JsonSerializer.Serialize(parameters);
             return CreateCypherCommand(connection, graphName, cypher, parametersJson);
-        }
+        } */
 
         /// <summary>
         /// Creates a Cypher command with parameters passed as a JSON string
@@ -112,7 +112,7 @@ namespace Npgsql.Age
         /// <param name="cypher">The Cypher query with parameter placeholders (e.g., $name)</param>
         /// <param name="parametersJson">JSON string containing parameter names and values</param>
         /// <returns>An NpgsqlCommand ready for execution</returns>
-        public static NpgsqlCommand CreateCypherCommand(
+        /* public static NpgsqlCommand CreateCypherCommand(
             this NpgsqlConnection connection,
             string graphName,
             string cypher,
@@ -120,7 +120,7 @@ namespace Npgsql.Age
         )
         {
             string query =
-                $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$, $1) as {CypherHelpers.GenerateAsPart(cypher)};";
+                $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$) as {CypherHelpers.GenerateAsPart(cypher)};";
             return new NpgsqlCommand(query, connection)
             {
                 Parameters =
@@ -132,6 +132,6 @@ namespace Npgsql.Age
                     },
                 },
             };
-        }
+        } */
     }
 }
