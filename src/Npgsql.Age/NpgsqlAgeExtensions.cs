@@ -19,7 +19,6 @@ namespace Npgsql.Age
         )
         {
             builder.AddTypeInfoResolverFactory(new AgtypeResolverFactory());
-            builder.MapComposite<Agtype>();
             builder.UsePhysicalConnectionInitializer(
                 connection =>
                     ConnectionInitializer.UsePhysicalConnectionInitializer(
@@ -124,7 +123,14 @@ namespace Npgsql.Age
                 $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$, $1) as {CypherHelpers.GenerateAsPart(cypher)};";
             return new NpgsqlCommand(query, connection)
             {
-                Parameters = { new NpgsqlParameter { Value = new Agtype(parametersJson) } },
+                Parameters =
+                {
+                    new NpgsqlParameter
+                    {
+                        Value = new Agtype(parametersJson),
+                        DataTypeName = "ag_catalog.agtype",
+                    },
+                },
             };
         }
     }
