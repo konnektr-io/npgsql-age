@@ -219,7 +219,7 @@ $$) as (value agtype);",
 
         await using var command = connection.CreateCypherCommand(
             graphName,
-            "MATCH (p:Person) WHERE p.name = %s AND p.age > %d RETURN p.name, p.age"
+            "MATCH (p:Person) WHERE p.name = '%s' AND p.age > %d RETURN p.name, p.age"
         );
         command.Parameters.AddWithValue("Alice");
         command.Parameters.AddWithValue(25);
