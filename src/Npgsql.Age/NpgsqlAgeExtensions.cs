@@ -127,7 +127,7 @@ namespace Npgsql.Age
                 {
                     new NpgsqlParameter
                     {
-                        Value = new Agtype(parametersJson),
+                        Value = parametersJson,
                         DataTypeName = "ag_catalog.agtype",
                     },
                 },
