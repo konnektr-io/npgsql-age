@@ -1,4 +1,5 @@
-﻿using Npgsql.Age.Types;
+﻿using System.Globalization;
+using Npgsql.Age.Types;
 using Xunit;
 
 namespace Npgsql.AgeTests;
@@ -51,6 +52,20 @@ public class AgTypeTests
 
     #endregion
 
+    #region GetFloat()
+
+    [Fact]
+    public void GetFloat_Should_ReturnEquivalentDouble_For_Pi()
+    {
+        var numString = "3.14";
+        var agtype = new Agtype(numString);
+        var floatEquivalent = float.Parse(numString, CultureInfo.InvariantCulture);
+
+        Assert.Equal(floatEquivalent, agtype.GetFloat());
+    }
+
+    #endregion
+
     #region GetDouble()
 
     [Fact]
@@ -58,7 +73,17 @@ public class AgTypeTests
     {
         var numString = "1.0023e3";
         var agtype = new Agtype(numString);
-        var doubleEquivalent = double.Parse(numString);
+        var doubleEquivalent = double.Parse(numString, CultureInfo.InvariantCulture);
+
+        Assert.Equal(doubleEquivalent, agtype.GetDouble());
+    }
+
+    [Fact]
+    public void GetDouble_Should_ReturnEquivalentDouble_For_Pi()
+    {
+        var numString = "3.14";
+        var agtype = new Agtype(numString);
+        var doubleEquivalent = double.Parse(numString, CultureInfo.InvariantCulture);
 
         Assert.Equal(doubleEquivalent, agtype.GetDouble());
     }
