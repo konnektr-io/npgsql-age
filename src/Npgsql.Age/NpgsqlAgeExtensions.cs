@@ -124,6 +124,7 @@ namespace Npgsql.Age
                 $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$, $1) as {CypherHelpers.GenerateAsPart(cypher)};";
             var command = new NpgsqlCommand(query, connection);
             command.Parameters.AddWithValue(parametersJson);
+            command.Parameters[0].DataTypeName = "ag_catalog.agtype";
             return command;
         }
     }
