@@ -48,6 +48,99 @@ await using (var reader = await cmd.ExecuteReaderAsync())
 }
 ```
 
+## Using Cypher Parameters
+
+You can pass parameters to your Cypher queries to avoid SQL injection and improve query reusability. Parameters are referenced in Cypher queries using the `$` prefix (e.g., `$name`, `$age`).
+
+### Using a Dictionary
+
+```csharp
+using Npgsql;
+using Npgsql.Age;
+using Npgsql.Age.Types;
+using System.Collections.Generic;
+
+var parameters = new Dictionary<string, object?>
+{
+    ["name"] = "Alice",
+    ["age"] = 30
+};
+
+await using (var cmd = dataSource.CreateCypherCommand(
+    "graph1", 
+    "CREATE (p:Person {name: $name, age: $age}) RETURN p",
+    parameters))
+await using (var reader = await cmd.ExecuteReaderAsync())
+{
+    while (await reader.ReadAsync())
+    {
+        var agtypeResult = reader.GetValue<Agtype>(0);
+        Vertex person = agtypeResult.GetVertex();
+        Console.WriteLine($"Created: {person}");
+    }
+}
+```
+
+### Using a JSON String
+
+You can also pass parameters as a JSON string:
+
+```csharp
+string parametersJson = """{"name": "Bob", "age": 25}""";
+
+await using (var cmd = dataSource.CreateCypherCommand(
+    "graph1", 
+    "CREATE (p:Person {name: $name, age: $age}) RETURN p",
+    parametersJson))
+{
+    await cmd.ExecuteNonQueryAsync();
+}
+```
+
+### Complex Parameters
+
+Parameters can include nested objects and arrays:
+
+```csharp
+var parameters = new Dictionary<string, object?>
+{
+    ["person"] = new Dictionary<string, object>
+    {
+        ["name"] = "Charlie",
+        ["age"] = 35,
+        ["hobbies"] = new[] { "reading", "cycling" }
+    }
+};
+
+await using (var cmd = dataSource.CreateCypherCommand(
+    "graph1", 
+    "CREATE (p:Person {name: $person.name, age: $person.age}) RETURN p",
+    parameters))
+{
+    await cmd.ExecuteNonQueryAsync();
+}
+```
+
+### Null Values
+
+Null parameter values are supported:
+
+```csharp
+var parameters = new Dictionary<string, object?>
+{
+    ["name"] = "David",
+    ["email"] = null  // Optional property
+};
+
+await using (var cmd = dataSource.CreateCypherCommand(
+    "graph1", 
+    "CREATE (p:Person {name: $name}) RETURN p",
+    parameters))
+{
+    await cmd.ExecuteNonQueryAsync();
+}
+```
+
 ## Acknowledgements
 
 * This project is a fork of [Apache AGE](https://github.com/Allison-E/pg-age).

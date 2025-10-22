@@ -414,4 +414,181 @@ $$) as (value agtype);",
 
         await DropTempGraphAsync(graphName);
     }
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_WithNestedObject_Should_Work()
+    {
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        var parameters = new Dictionary<string, object?>
+        {
+            ["person"] = new Dictionary<string, object>
+            {
+                ["name"] = "Alice",
+                ["age"] = 30,
+                ["address"] = new Dictionary<string, object>
+                {
+                    ["city"] = "Seattle",
+                    ["zipCode"] = "98101",
+                },
+            },
+        };
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "CREATE (p:Person {name: $person.name, age: $person.age, city: $person.address.city, zipCode: $person.address.zipCode}) RETURN p",
+            parameters
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(dataReader.HasRows);
+        Assert.True(await dataReader.ReadAsync());
+
+        var result = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        var vertex = result?.GetVertex();
+
+        Assert.NotNull(vertex);
+        Assert.Equal("Alice", vertex?.Properties["name"]);
+        Assert.Equal(30, vertex?.Properties["age"]);
+        Assert.Equal("Seattle", vertex?.Properties["city"]);
+        Assert.Equal("98101", vertex?.Properties["zipCode"]);
+
+        await DropTempGraphAsync(graphName);
+    }
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_WithArrayParameter_Should_Work()
+    {
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        var parameters = new Dictionary<string, object?>
+        {
+            ["hobbies"] = new[] { "reading", "cycling", "photography" },
+            ["scores"] = new[] { 85, 92, 78, 95 },
+        };
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "RETURN $hobbies, $scores",
+            parameters
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(dataReader.HasRows);
+        Assert.True(await dataReader.ReadAsync());
+
+        var hobbiesResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        var scoresResult = await dataReader.GetFieldValueAsync<Agtype?>(1);
+
+        Assert.Equal(
+            new object[] { "reading", "cycling", "photography" },
+            hobbiesResult?.GetList()
+        );
+        Assert.Equal(new object[] { 85, 92, 78, 95 }, scoresResult?.GetList());
+
+        await DropTempGraphAsync(graphName);
+    }
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_WithNestedArraysAndObjects_Should_Work()
+    {
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        var parameters = new Dictionary<string, object?>
+        {
+            ["data"] = new Dictionary<string, object>
+            {
+                ["tags"] = new[] { "developer", "architect" },
+                ["metadata"] = new Dictionary<string, object>
+                {
+                    ["level"] = "senior",
+                    ["years"] = 10,
+                },
+                ["projects"] = new[]
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = "Project A",
+                        ["status"] = "completed",
+                    },
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = "Project B",
+                        ["status"] = "active",
+                    },
+                },
+            },
+        };
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "RETURN $data.tags, $data.metadata.level, $data.metadata.years, $data.projects",
+            parameters
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(dataReader.HasRows);
+        Assert.True(await dataReader.ReadAsync());
+
+        var tagsResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        var levelResult = await dataReader.GetFieldValueAsync<Agtype?>(1);
+        var yearsResult = await dataReader.GetFieldValueAsync<Agtype?>(2);
+        var projectsResult = await dataReader.GetFieldValueAsync<Agtype?>(3);
+
+        Assert.Equal(new object[] { "developer", "architect" }, tagsResult?.GetList());
+        Assert.Equal("senior", levelResult?.GetString());
+        Assert.Equal(10, yearsResult?.GetInt32());
+
+        var projects = projectsResult?.GetList();
+        Assert.NotNull(projects);
+        Assert.Equal(2, projects.Count);
+
+        await DropTempGraphAsync(graphName);
+    }
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_WithArrayInVertexCreation_Should_Work()
+    {
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        var parameters = new Dictionary<string, object?>
+        {
+            ["name"] = "Bob",
+            ["skills"] = new[] { "C#", "Python", "SQL" },
+            ["certifications"] = new[] { "Azure", "AWS" },
+        };
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "CREATE (p:Developer {name: $name, skills: $skills, certifications: $certifications}) RETURN p",
+            parameters
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(dataReader.HasRows);
+        Assert.True(await dataReader.ReadAsync());
+
+        var result = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        var vertex = result?.GetVertex();
+
+        Assert.NotNull(vertex);
+        Assert.Equal("Bob", vertex?.Properties["name"]);
+
+        var skills = vertex?.Properties["skills"] as System.Collections.IList;
+        Assert.NotNull(skills);
+        Assert.Equal(3, skills.Count);
+        Assert.Contains("C#", skills.Cast<object>());
+        Assert.Contains("Python", skills.Cast<object>());
+        Assert.Contains("SQL", skills.Cast<object>());
+
+        await DropTempGraphAsync(graphName);
+    }
 }
