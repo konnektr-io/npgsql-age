@@ -119,11 +119,12 @@ namespace Npgsql.Age
             string parametersJson
         )
         {
+            // Cast the text parameter to agtype in the query, similar to how Apache AGE tests do it
             string query =
-                $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$, $1) as {CypherHelpers.GenerateAsPart(cypher)};";
+                $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$, $1::agtype) as {CypherHelpers.GenerateAsPart(cypher)};";
             var command = new NpgsqlCommand(query, connection);
-            command.Parameters.AddWithValue(new Agtype(parametersJson));
-            command.Parameters[0].DataTypeName = "ag_catalog.agtype";
+            // Pass as a plain string parameter, PostgreSQL will handle the cast to agtype
+            command.Parameters.AddWithValue(parametersJson);
             return command;
         }
     }
