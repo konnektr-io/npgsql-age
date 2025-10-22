@@ -97,7 +97,7 @@ namespace Npgsql.Age
             this NpgsqlConnection connection,
             string graphName,
             string cypher,
-            Dictionary<string, object> parameters
+            Dictionary<string, object?> parameters
         )
         {
             string parametersJson = JsonSerializer.Serialize(parameters);
@@ -122,9 +122,8 @@ namespace Npgsql.Age
             string query =
                 $"SELECT * FROM ag_catalog.cypher('{graphName}', $$ {CypherHelpers.EscapeCypher(cypher)} $$, $1) as {CypherHelpers.GenerateAsPart(cypher)};";
             var command = new NpgsqlCommand(query, connection);
-            command.Parameters.Add(
-                new() { Value = new Agtype(parametersJson), DataTypeName = "ag_catalog.agtype" }
-            );
+            command.Parameters.AddWithValue(new Agtype(parametersJson));
+            command.Parameters[0].DataTypeName = "ag_catalog.agtype";
             return command;
         }
     }
