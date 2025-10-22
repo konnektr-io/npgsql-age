@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using Npgsql.Age.Internal.JsonConverters;
 
@@ -28,7 +29,7 @@ namespace Npgsql.Age.Types
         /// <returns>
         /// String value.
         /// </returns>
-        public string GetString() => _value;
+        public string GetString() => _value.Trim('"');
 
         /// <summary>
         /// Return the agtype value as a boolean.
@@ -59,7 +60,7 @@ namespace Npgsql.Age.Types
             if (_value.Equals("NaN", StringComparison.OrdinalIgnoreCase))
                 return float.NaN;
 
-            return float.Parse(_value);
+            return float.Parse(_value, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -80,7 +81,7 @@ namespace Npgsql.Age.Types
             if (_value.Equals("NaN", StringComparison.OrdinalIgnoreCase))
                 return double.NaN;
 
-            return double.Parse(_value);
+            return double.Parse(_value, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
