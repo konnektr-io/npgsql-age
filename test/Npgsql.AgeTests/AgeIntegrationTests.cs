@@ -609,7 +609,7 @@ $$) as (value agtype);",
         // First create the vertex with a specific property from the root
         await using var createCommand = connection.CreateCypherCommand(
             graphName,
-            "CREATE (t:Twin {dtId: $['$dtId']}) RETURN t",
+            "CREATE (t:Twin {`$dtId`: $.`$dtId`}) RETURN t",
             parameters
         );
         await using var createReader = await createCommand.ExecuteReaderAsync();
@@ -627,7 +627,7 @@ $$) as (value agtype);",
         // Now test MERGE with SET using root parameter
         await using var mergeCommand = connection.CreateCypherCommand(
             graphName,
-            @"MERGE (t:Twin {dtId: $['$dtId']})
+            @"MERGE (t:Twin {`$dtId`: $.`$dtId`})
               SET t = $
               RETURN t",
             parameters
