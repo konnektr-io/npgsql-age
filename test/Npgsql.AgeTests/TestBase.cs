@@ -15,8 +15,7 @@ public class TestBase
             .Build();
 
         string connectionString =
-            Environment.GetEnvironmentVariable("AGE_CONNECTION_STRING")
-            ?? configuration.GetConnectionString("AgeConnectionString")
+            configuration.GetConnectionString("AgeConnectionString")
             ?? throw new ArgumentNullException("AgeConnectionString");
 
         NpgsqlConnectionStringBuilder connectionStringBuilder =
