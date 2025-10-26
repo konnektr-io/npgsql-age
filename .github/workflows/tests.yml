@@ -36,7 +36,7 @@ jobs:
       - name: Start PostgreSQL with AGE extension
         run: |
           if [ "${{ matrix.type }}" = "cnpg" ]; then
-            docker run --name postgres-test-cnpg \
+            docker run --name postgres-test-cnpg -d \
               -e POSTGRES_PASSWORD=app \
               -p 5432:5432 \
               --shm-size=512mb \
