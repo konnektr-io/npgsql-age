@@ -207,6 +207,9 @@ $$) as (value agtype);",
         await DropTempGraphAsync(graphName);
     }
 
+    // This test only works on the old 16-bookworm-4 CNPG image
+    // It shouldn't work ...
+    // The right way to do this is to use '{\"bignumber\":5e24}'::cstring::agtype
     /* [Fact]
     public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
     {
@@ -228,6 +231,28 @@ $$) as (value agtype);",
 
         await DropTempGraphAsync(graphName);
     } */
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
+    {
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "WITH '{\"bignumber\":5e24}'::cstring::agtype as obj RETURN obj.bignumber"
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(dataReader.HasRows);
+        Assert.True(await dataReader.ReadAsync());
+
+        var agResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        Assert.Equal(5e24, agResult?.GetDouble());
+
+        await DropTempGraphAsync(graphName);
+    }
 
     [Fact]
     public async Task ExecuteCypherQueryAsync_WithDictionaryParameters_Should_ReturnCorrectResults()
