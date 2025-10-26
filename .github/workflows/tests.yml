@@ -19,6 +19,10 @@ jobs:
             type: apache
           - age_image: dev_snapshot_PG17
             type: apache
+          - age_image: 16-bookworm-4
+            type: cnpg
+          - age_image: 16-1.5.0-standard-bookworm
+            type: cnpg
           - age_image: 16-1.5.0-standard-bookworm
             type: cnpg
           - age_image: 16-1.5.0-standard-trixie
