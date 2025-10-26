@@ -59,13 +59,15 @@ jobs:
         if: matrix.type == 'cnpg'
         run: |
           for i in {1..30}; do
-            if docker exec postgres-test-${{ matrix.age_image }} pg_isready -U app -d app; then
+            if docker exec postgres-test-${{ matrix.age_image }} pg_isready -U app -d postgres; then
               echo "PostgreSQL is ready for init";
               break;
             fi;
             echo "Waiting for PostgreSQL (init)...";
             sleep 5;
           done
+          echo "Creating app database ..."
+          docker exec postgres-test-${{ matrix.age_image }} createdb -U app app
           echo "Running initialization ..."
           docker exec postgres-test-${{ matrix.age_image }} psql -U app -d app -c "CREATE EXTENSION age;"
           docker exec postgres-test-${{ matrix.age_image }} psql -U app -d app -c "GRANT SELECT ON ag_catalog.ag_graph TO app;"
@@ -76,7 +78,7 @@ jobs:
         if: matrix.type != 'cnpg'
         run: |
           for i in {1..30}; do
-            if docker exec postgres-test-${{ matrix.age_image }} pg_isready -U postgres -d app; then
+            if docker exec postgres-test-${{ matrix.age_image }} pg_isready -U app -d app; then
               echo "PostgreSQL is ready";
               sleep 5;
               exit 0;
