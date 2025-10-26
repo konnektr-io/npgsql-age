@@ -30,20 +30,6 @@ jobs:
           - age_image: ghcr.io/konnektr-io/age:17-1.6.0-standard-trixie
             type: cnpg
     steps:
-      - name: Run CNPG AGE init SQL
-        if: matrix.type == 'cnpg'
-        run: |
-          for i in {1..30}; do
-            if docker exec postgres-test-cnpg pg_isready -U app -d app; then
-              echo "PostgreSQL is ready for init";
-              break;
-            fi;
-            echo "Waiting for PostgreSQL (init)...";
-            sleep 5;
-          done
-          docker exec -u app postgres-test-cnpg psql -U app -d app -c "CREATE EXTENSION age;"
-          docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT SELECT ON ag_catalog.ag_graph TO app;"
-          docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT USAGE ON SCHEMA ag_catalog TO app;"
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -64,8 +50,24 @@ jobs:
               -p 5432:5432 \
               -d apache/age:${{ matrix.age_image }}
           fi
+          
+      - name: Run CNPG AGE init SQL
+        if: matrix.type == 'cnpg'
+        run: |
+          for i in {1..30}; do
+            if docker exec postgres-test-cnpg pg_isready -U app -d app; then
+              echo "PostgreSQL is ready for init";
+              break;
+            fi;
+            echo "Waiting for PostgreSQL (init)...";
+            sleep 5;
+          done
+          docker exec -u app postgres-test-cnpg psql -U app -d app -c "CREATE EXTENSION age;"
+          docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT SELECT ON ag_catalog.ag_graph TO app;"
+          docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT USAGE ON SCHEMA ag_catalog TO app;"
 
       - name: Wait for PostgreSQL to be ready
+        if: matrix.type != 'cnpg'
         run: |
           for i in {1..30}; do
             if docker exec postgres-test-${{ matrix.age_image }} pg_isready -U postgres -d app; then
