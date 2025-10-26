@@ -37,11 +37,14 @@ jobs:
         run: |
           if [ "${{ matrix.type }}" = "cnpg" ]; then
             docker run --name postgres-test-cnpg \
-              -e POSTGRES_USER=app \
               -e POSTGRES_PASSWORD=app \
-              -e POSTGRES_DB=app \
               -p 5432:5432 \
-              -d ${{ matrix.age_image }}
+              --shm-size=512mb \
+              ${{ matrix.age_image }} \
+              bash -c "initdb -D /var/lib/postgresql/data --username=app --pwfile=<(echo app) && \
+                      echo 'host all all 0.0.0.0/0 trust' >> /var/lib/postgresql/data/pg_hba.conf && \
+                      echo 'local all all trust' >> /var/lib/postgresql/data/pg_hba.conf && \
+                      postgres -D /var/lib/postgresql/data \
           else
             docker run --name postgres-test-${{ matrix.age_image }} \
               -e POSTGRES_USER=app \
@@ -62,9 +65,13 @@ jobs:
             echo "Waiting for PostgreSQL (init)...";
             sleep 5;
           done
+          echo "Creating app database..."
+          docker exec postgres-test createdb -U app app
+          echo "Running initialization ..."
           docker exec -u app postgres-test-cnpg psql -U app -d app -c "CREATE EXTENSION age;"
           docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT SELECT ON ag_catalog.ag_graph TO app;"
           docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT USAGE ON SCHEMA ag_catalog TO app;"
+          echo "Database initialized successfully"
 
       - name: Wait for PostgreSQL to be ready
         if: matrix.type != 'cnpg'
