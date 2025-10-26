@@ -215,7 +215,7 @@ $$) as (value agtype);",
 
         await using var command = connection.CreateCypherCommand(
             graphName,
-            "WITH '{\"bignumber\":5e24}' as obj RETURN obj.bignumber"
+            "WITH '{\"bignumber\":5e24}'::agtype as obj RETURN obj.bignumber"
         );
         await using var dataReader = await command.ExecuteReaderAsync();
 
