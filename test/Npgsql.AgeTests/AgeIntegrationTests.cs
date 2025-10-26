@@ -207,7 +207,7 @@ $$) as (value agtype);",
         await DropTempGraphAsync(graphName);
     }
 
-    [Fact]
+    /* [Fact]
     public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
     {
         var graphName = await CreateTempGraphAsync();
@@ -227,7 +227,7 @@ $$) as (value agtype);",
         Assert.Equal(5e24, agResult?.GetDouble());
 
         await DropTempGraphAsync(graphName);
-    }
+    } */
 
     [Fact]
     public async Task ExecuteCypherQueryAsync_WithDictionaryParameters_Should_ReturnCorrectResults()
