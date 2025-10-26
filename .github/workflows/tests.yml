@@ -23,8 +23,6 @@ jobs:
             type: cnpg
           - age_image: 16-1.5.0-standard-bookworm
             type: cnpg
-          - age_image: 16-1.5.0-standard-bookworm
-            type: cnpg
           - age_image: 16-1.5.0-standard-trixie
             type: cnpg
           - age_image: 16-1.6.0-standard-bookworm
