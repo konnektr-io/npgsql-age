@@ -19,15 +19,15 @@ jobs:
             type: apache
           - age_image: dev_snapshot_PG17
             type: apache
-          - age_image: age:16-1.5.0-standard-bookworm
+          - age_image: 16-1.5.0-standard-bookworm
             type: cnpg
-          - age_image: age:16-1.5.0-standard-trixie
+          - age_image: 16-1.5.0-standard-trixie
             type: cnpg
-          - age_image: age:16-1.6.0-standard-bookworm
+          - age_image: 16-1.6.0-standard-bookworm
             type: cnpg
-          - age_image: age:16-1.6.0-standard-trixie
+          - age_image: 16-1.6.0-standard-trixie
             type: cnpg
-          - age_image: age:17-1.6.0-standard-trixie
+          - age_image: 17-1.6.0-standard-trixie
             type: cnpg
     steps:
       - name: Checkout
@@ -40,7 +40,7 @@ jobs:
               -e POSTGRES_PASSWORD=app \
               -p 5432:5432 \
               --shm-size=512mb \
-              -d ghcr.io/konnektr-io/${{ matrix.age_image }} \
+              -d ghcr.io/konnektr-io/age:${{ matrix.age_image }} \
               bash -c "initdb -D /var/lib/postgresql/data --username=app --pwfile=<(echo app) && \
                       echo 'host all all 0.0.0.0/0 trust' >> /var/lib/postgresql/data/pg_hba.conf && \
                       echo 'local all all trust' >> /var/lib/postgresql/data/pg_hba.conf && \
