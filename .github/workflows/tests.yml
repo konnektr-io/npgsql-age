@@ -12,27 +12,63 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        age_image:
-          - release_PG16_1.5.0
-          - release_PG16_1.6.0
-          - dev_snapshot_PG17
+        include:
+          - age_image: release_PG16_1.5.0
+            type: apache
+          - age_image: release_PG16_1.6.0
+            type: apache
+          - age_image: dev_snapshot_PG17
+            type: apache
+          - age_image: ghcr.io/konnektr-io/age:16-1.5.0-standard-bookworm
+            type: cnpg
+          - age_image: ghcr.io/konnektr-io/age:16-1.5.0-standard-trixie
+            type: cnpg
+          - age_image: ghcr.io/konnektr-io/age:16-1.6.0-standard-bookworm
+            type: cnpg
+          - age_image: ghcr.io/konnektr-io/age:16-1.6.0-standard-trixie
+            type: cnpg
+          - age_image: ghcr.io/konnektr-io/age:17-1.6.0-standard-trixie
+            type: cnpg
     steps:
+      - name: Run CNPG AGE init SQL
+        if: matrix.type == 'cnpg'
+        run: |
+          for i in {1..30}; do
+            if docker exec postgres-test-cnpg pg_isready -U app -d app; then
+              echo "PostgreSQL is ready for init";
+              break;
+            fi;
+            echo "Waiting for PostgreSQL (init)...";
+            sleep 5;
+          done
+          docker exec -u app postgres-test-cnpg psql -U app -d app -c "CREATE EXTENSION age;"
+          docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT SELECT ON ag_catalog.ag_graph TO app;"
+          docker exec -u app postgres-test-cnpg psql -U app -d app -c "GRANT USAGE ON SCHEMA ag_catalog TO app;"
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Start PostgreSQL with AGE extension
         run: |
-          docker run --name postgres-test-${{ matrix.age_image }} \
-            -e POSTGRES_USER=postgres \
-            -e POSTGRES_PASSWORD=postgres \
-            -e POSTGRES_DB=agedotnet_tests \
-            -p 5432:5432 \
-            -d apache/age:${{ matrix.age_image }}
+          if [ "${{ matrix.type }}" = "cnpg" ]; then
+            docker run --name postgres-test-cnpg \
+              -e POSTGRES_USER=app \
+              -e POSTGRES_PASSWORD=app \
+              -e POSTGRES_DB=app \
+              -p 5432:5432 \
+              -d ${{ matrix.age_image }}
+          else
+            docker run --name postgres-test-${{ matrix.age_image }} \
+              -e POSTGRES_USER=app \
+              -e POSTGRES_PASSWORD=app \
+              -e POSTGRES_DB=app \
+              -p 5432:5432 \
+              -d apache/age:${{ matrix.age_image }}
+          fi
 
       - name: Wait for PostgreSQL to be ready
         run: |
           for i in {1..30}; do
-            if docker exec postgres-test-${{ matrix.age_image }} pg_isready -U postgres -d agedotnet_tests; then
+            if docker exec postgres-test-${{ matrix.age_image }} pg_isready -U postgres -d app; then
               echo "PostgreSQL is ready";
               sleep 5;
               exit 0;
@@ -58,7 +94,11 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Test with dotnet
-        run: dotnet test --logger 'GitHubActions' --logger 'console;verbosity=normal' --blame-hang --blame-hang-timeout 5m
+        run: |
+          if [ "${{ matrix.type }}" = "cnpg" ]; then
+            export CNPG_TEST=true
+          fi
+          dotnet test --logger 'GitHubActions' --logger 'console;verbosity=normal' --blame-hang --blame-hang-timeout 5m
 
       - name: Stop PostgreSQL container
         if: always()

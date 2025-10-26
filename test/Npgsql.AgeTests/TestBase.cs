@@ -23,7 +23,16 @@ public class TestBase
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(
             connectionStringBuilder.ConnectionString
         );
-        _dataSource = dataSourceBuilder.UseAge().Build();
+        // UseAge(true) for CNPG images, controlled by CNPG_TEST env var
+        var cnpgTest = Environment.GetEnvironmentVariable("CNPG_TEST");
+        if (!string.IsNullOrEmpty(cnpgTest) && cnpgTest.ToLowerInvariant() == "true")
+        {
+            _dataSource = dataSourceBuilder.UseAge(true).Build();
+        }
+        else
+        {
+            _dataSource = dataSourceBuilder.UseAge().Build();
+        }
     }
 
     public void Dispose()
