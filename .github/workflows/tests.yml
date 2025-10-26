@@ -66,12 +66,10 @@ jobs:
             echo "Waiting for PostgreSQL (init)...";
             sleep 5;
           done
-          echo "Creating app database..."
-          docker exec postgres-test-${{ matrix.age_image }} createdb -U app app
           echo "Running initialization ..."
-          docker exec -u app postgres-test-${{ matrix.age_image }} psql -U app -d app -c "CREATE EXTENSION age;"
-          docker exec -u app postgres-test-${{ matrix.age_image }} psql -U app -d app -c "GRANT SELECT ON ag_catalog.ag_graph TO app;"
-          docker exec -u app postgres-test-${{ matrix.age_image }} psql -U app -d app -c "GRANT USAGE ON SCHEMA ag_catalog TO app;"
+          docker exec postgres-test-${{ matrix.age_image }} psql -U app -d app -c "CREATE EXTENSION age;"
+          docker exec postgres-test-${{ matrix.age_image }} psql -U app -d app -c "GRANT SELECT ON ag_catalog.ag_graph TO app;"
+          docker exec postgres-test-${{ matrix.age_image }} psql -U app -d app -c "GRANT USAGE ON SCHEMA ag_catalog TO app;"
           echo "Database initialized successfully"
 
       - name: Wait for PostgreSQL to be ready
