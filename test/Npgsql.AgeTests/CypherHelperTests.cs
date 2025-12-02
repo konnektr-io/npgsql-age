@@ -69,6 +69,14 @@ namespace Npgsql.AgeTests
         }
 
         [Fact]
+        public void GenerateAsPart_WithStarReturn()
+        {
+            string cypher = "MATCH (n) RETURN *";
+            string result = CypherHelpers.GenerateAsPart(cypher);
+            Assert.Equal("(_ agtype)", result);
+        }
+
+        [Fact]
         public void GenerateAsPart_WithCombinedAliasedReturn()
         {
             string cypher =
