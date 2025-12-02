@@ -17,7 +17,7 @@ jobs:
             type: apache
           - age_image: release_PG16_1.6.0
             type: apache
-          - age_image: dev_snapshot_PG17
+          - age_image: release_PG17_1.6.0
             type: apache
           - age_image: 16-bookworm-4
             type: cnpg
