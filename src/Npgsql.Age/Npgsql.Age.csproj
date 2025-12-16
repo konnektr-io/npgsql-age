@@ -9,7 +9,7 @@
     <LangVersion>9.0</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Title>Konnektr.Npgsql.Age</Title>
+    <Title>Npgsql.Age</Title>
     <RepositoryUrl>https://github.com/konnektr-io/npgsql-age</RepositoryUrl>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <IncludeSymbols>true</IncludeSymbols>
