@@ -5,12 +5,12 @@
     <Authors>Niko Raes, Emmanuel Allison</Authors>
     <Description>A plugin that extends Npgsql to enable using npgsql the ApacheAge extension for PostgreSQL.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <TargetFrameworks>net9.0;net8.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
     <LangVersion>9.0</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Title>Npgsql.Age</Title>
-    <RepositoryUrl>https://github.com/nikoraes/npgsql-age</RepositoryUrl>
+    <Title>Konnektr.Npgsql.Age</Title>
+    <RepositoryUrl>https://github.com/konnektr-io/npgsql-age</RepositoryUrl>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -33,7 +33,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="Npgsql" Version="9.0.4" />
+    <PackageReference Include="Npgsql" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

@@ -19,7 +19,9 @@ namespace Npgsql.Age
             bool loadFromPlugins = false
         )
         {
+#pragma warning disable NPG9001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             builder.AddTypeInfoResolverFactory(new AgtypeResolverFactory());
+#pragma warning restore NPG9001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             builder.UsePhysicalConnectionInitializer(
                 connection =>
                     ConnectionInitializer.UsePhysicalConnectionInitializer(
