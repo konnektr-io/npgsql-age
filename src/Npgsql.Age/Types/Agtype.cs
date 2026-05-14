@@ -321,6 +321,111 @@ namespace Npgsql.Age.Types
                 );
             }
         }
+
+        /// <summary>
+        /// Returns <see langword="true"/> if the agtype represents a null value.
+        /// </summary>
+        public bool IsNull => _value == "null";
+
+        /// <summary>
+        /// Returns <see langword="true"/> if the agtype is an array.
+        /// </summary>
+        /// <remarks>
+        /// Paths (which also start with <c>[</c>) are not considered arrays because their
+        /// string representation ends with the <c>::path</c> footer rather than <c>]</c>.
+        /// </remarks>
+        public bool IsArray => _value.StartsWith('[') && _value.EndsWith(']');
+
+        /// <summary>
+        /// Returns <see langword="true"/> if the agtype is a plain JSON object (map).
+        /// </summary>
+        public bool IsMap => _value.StartsWith('{') && _value.EndsWith('}') && !IsVertex && !IsEdge;
+
+        /// <summary>
+        /// Returns the elements of the agtype array as individual <see cref="Agtype"/> values,
+        /// preserving type annotations so that <see cref="IsVertex"/>, <see cref="IsEdge"/>,
+        /// and other type-check properties work correctly on each element.
+        /// </summary>
+        /// <exception cref="FormatException">
+        /// Thrown when the agtype is not an array.
+        /// </exception>
+        public IEnumerable<Agtype> GetArray()
+        {
+            if (!IsArray)
+                throw new FormatException(
+                    "Cannot convert agtype to array. Agtype is not a valid array."
+                );
+
+            // Walk the raw string tracking JSON nesting depth and string literals,
+            // splitting on top-level commas. This preserves ::vertex / ::edge suffixes
+            // on each element so the returned Agtype values keep their type information.
+            int depth = 0;
+            bool inString = false;
+            int start = 1; // skip opening '['
+            int end = _value.Length - 1; // position of closing ']'
+
+            for (int i = start; i < end; i++)
+            {
+                char c = _value[i];
+                if (inString)
+                {
+                    if (c == '\\')
+                        i++; // skip escaped character
+                    else if (c == '"')
+                        inString = false;
+                }
+                else
+                {
+                    switch (c)
+                    {
+                        case '"':
+                            inString = true;
+                            break;
+                        case '{':
+                        case '[':
+                            depth++;
+                            break;
+                        case '}':
+                        case ']':
+                            depth--;
+                            break;
+                        case ',' when depth == 0:
+                            var item = _value.Substring(start, i - start).Trim();
+                            if (item.Length > 0)
+                                yield return new Agtype(item);
+                            start = i + 1;
+                            break;
+                    }
+                }
+            }
+
+            // Yield the last (or only) item
+            if (end > start)
+            {
+                var lastItem = _value.Substring(start, end - start).Trim();
+                if (lastItem.Length > 0)
+                    yield return new Agtype(lastItem);
+            }
+        }
+
+        /// <summary>
+        /// Returns the agtype map as a <see cref="Dictionary{TKey, TValue}"/>.
+        /// </summary>
+        /// <exception cref="FormatException">
+        /// Thrown when the agtype is not a map.
+        /// </exception>
+        public Dictionary<string, object?> GetMap()
+        {
+            if (!IsMap)
+                throw new FormatException(
+                    "Cannot convert agtype to map. Agtype is not a valid map."
+                );
+
+            return JsonSerializer.Deserialize<Dictionary<string, object?>>(
+                    _value,
+                    SerializerOptions.Default
+                ) ?? throw new FormatException("Cannot convert agtype to map.");
+        }
         #endregion
 
         #region Explicit operators
