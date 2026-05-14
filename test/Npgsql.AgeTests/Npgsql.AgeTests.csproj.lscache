@@ -13,19 +13,11 @@ primary
 lastDtbSucceeded
 
 [properties]
-AssemblyName=Npgsql.AgeTests
-CommandLineArgsForDesignTimeEvaluation=-langversion:13.0 -define:TRACE
-CompilerGeneratedFilesOutputPath=
-MaxSupportedLangVersion=13.0
-ProjectAssetsFile=<PATH>obj/project.assets.json
-RootNamespace=Npgsql.AgeTests
-RunAnalyzers=
-RunAnalyzersDuringLiveAnalysis=
-SolutionPath=<PATH>../../Npgsql.Age.sln
-TargetFrameworkIdentifier=.NETCoreApp
-TargetPath=<PATH>bin/Debug/net9.0/Npgsql.AgeTests.dll
-TargetRefPath=<PATH>obj/Debug/net9.0/ref/Npgsql.AgeTests.dll
-TemporaryDependencyNodeTargetIdentifier=net9.0
+CommandLineArgsForDesignTimeEvaluation=-langversion:14.0 -define:TRACE
+MaxSupportedLangVersion=14.0
+TargetPath=<PATH>bin/Debug/net10.0/Npgsql.AgeTests.dll
+TargetRefPath=<PATH>obj/Debug/net10.0/ref/Npgsql.AgeTests.dll
+TemporaryDependencyNodeTargetIdentifier=net10.0
 
 [commandLineArguments]
 /noconfig
@@ -35,37 +27,38 @@ TemporaryDependencyNodeTargetIdentifier=net9.0
 /fullpaths
 /nostdlib+
 /errorreport:prompt
-/warn:9
-/define:TRACE;DEBUG;NET;NET9_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/warn:10
+/define:TRACE;DEBUG;NET;NET10_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NET10_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
 /highentropyva+
 /nullable:enable
+/features:"InterceptorsNamespaces=;Microsoft.Extensions.Validation.Generated"
 /debug+
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj\Debug\net9.0\Npgsql.AgeTests.dll
-/refout:obj\Debug\net9.0\refint\Npgsql.AgeTests.dll
+/out:obj\Debug\net10.0\Npgsql.AgeTests.dll
+/refout:obj\Debug\net10.0\refint\Npgsql.AgeTests.dll
 /target:exe
 /warnaserror-
 /utf8output
 /deterministic+
-/langversion:13.0
+/langversion:14.0
 /warnaserror+:NU1605,SYSLIB0011
 
 [sourceFiles]
-<NUGET>/microsoft.net.test.sdk/18.0.0/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs
+<NUGET>/microsoft.net.test.sdk/18.5.1/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs
 AgeIntegrationTests.cs
 AgTypeTests.cs
 CypherHelperTests.cs
-obj/Debug/net9.0/
- .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+obj/Debug/net10.0/
+ .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
  Npgsql.AgeTests.AssemblyInfo.cs
  Npgsql.AgeTests.GlobalUsings.g.cs
 TestBase.cs
 
 [metadataReferences]
-../../src/Npgsql.Age/obj/Debug/net9.0/ref/Npgsql.Age.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/9.0.15/ref/net9.0/
+../../src/Npgsql.Age/obj/Debug/net10.0/ref/Npgsql.Age.dll
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.6/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -127,6 +120,7 @@ TestBase.cs
  System.IO.Pipes.AccessControl.dll
  System.IO.Pipes.dll
  System.IO.UnmanagedMemoryStream.dll
+ System.Linq.AsyncEnumerable.dll
  System.Linq.dll
  System.Linq.Expressions.dll
  System.Linq.Parallel.dll
@@ -144,6 +138,7 @@ TestBase.cs
  System.Net.Quic.dll
  System.Net.Requests.dll
  System.Net.Security.dll
+ System.Net.ServerSentEvents.dll
  System.Net.ServicePoint.dll
  System.Net.Sockets.dll
  System.Net.WebClient.dll
@@ -204,6 +199,7 @@ TestBase.cs
  System.Text.Encodings.Web.dll
  System.Text.Json.dll
  System.Text.RegularExpressions.dll
+ System.Threading.AccessControl.dll
  System.Threading.Channels.dll
  System.Threading.dll
  System.Threading.Overlapped.dll
@@ -231,20 +227,20 @@ TestBase.cs
  System.Xml.XPath.XDocument.dll
  WindowsBase.dll
 <NUGET>/
- githubactionstestlogger/2.4.1/lib/net8.0/GitHubActionsTestLogger.dll
- microsoft.codecoverage/18.0.0/lib/net8.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll
- microsoft.extensions.configuration.abstractions/9.0.10/lib/net9.0/Microsoft.Extensions.Configuration.Abstractions.dll
- microsoft.extensions.configuration.environmentvariables/9.0.10/lib/net9.0/Microsoft.Extensions.Configuration.EnvironmentVariables.dll
- microsoft.extensions.configuration.fileextensions/9.0.10/lib/net9.0/Microsoft.Extensions.Configuration.FileExtensions.dll
- microsoft.extensions.configuration.json/9.0.10/lib/net9.0/Microsoft.Extensions.Configuration.Json.dll
- microsoft.extensions.configuration/9.0.10/lib/net9.0/Microsoft.Extensions.Configuration.dll
- microsoft.extensions.dependencyinjection.abstractions/9.0.0/lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
- microsoft.extensions.fileproviders.abstractions/9.0.10/lib/net9.0/Microsoft.Extensions.FileProviders.Abstractions.dll
- microsoft.extensions.fileproviders.physical/9.0.10/lib/net9.0/Microsoft.Extensions.FileProviders.Physical.dll
- microsoft.extensions.filesystemglobbing/9.0.10/lib/net9.0/Microsoft.Extensions.FileSystemGlobbing.dll
- microsoft.extensions.logging.abstractions/9.0.0/lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll
- microsoft.extensions.primitives/9.0.10/lib/net9.0/Microsoft.Extensions.Primitives.dll
- microsoft.testplatform.testhost/18.0.0/lib/net8.0/
+ githubactionstestlogger/3.0.4/lib/net10.0/GitHubActionsTestLogger.dll
+ microsoft.codecoverage/18.5.1/lib/net8.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll
+ microsoft.extensions.configuration.abstractions/10.0.8/lib/net10.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.configuration.environmentvariables/10.0.8/lib/net10.0/Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+ microsoft.extensions.configuration.fileextensions/10.0.8/lib/net10.0/Microsoft.Extensions.Configuration.FileExtensions.dll
+ microsoft.extensions.configuration.json/10.0.8/lib/net10.0/Microsoft.Extensions.Configuration.Json.dll
+ microsoft.extensions.configuration/10.0.8/lib/net10.0/Microsoft.Extensions.Configuration.dll
+ microsoft.extensions.dependencyinjection.abstractions/10.0.0/lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.fileproviders.abstractions/10.0.8/lib/net10.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+ microsoft.extensions.fileproviders.physical/10.0.8/lib/net10.0/Microsoft.Extensions.FileProviders.Physical.dll
+ microsoft.extensions.filesystemglobbing/10.0.8/lib/net10.0/Microsoft.Extensions.FileSystemGlobbing.dll
+ microsoft.extensions.logging.abstractions/10.0.0/lib/net10.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.primitives/10.0.8/lib/net10.0/Microsoft.Extensions.Primitives.dll
+ microsoft.testplatform.testhost/18.5.1/lib/net8.0/
   Microsoft.TestPlatform.CommunicationUtilities.dll
   Microsoft.TestPlatform.CoreUtilities.dll
   Microsoft.TestPlatform.CrossPlatEngine.dll
@@ -254,14 +250,14 @@ TestBase.cs
   Microsoft.VisualStudio.TestPlatform.ObjectModel.dll
   testhost.dll
  newtonsoft.json/13.0.3/lib/net6.0/Newtonsoft.Json.dll
- npgsql/10.0.0/lib/net9.0/Npgsql.dll
+ npgsql/10.0.2/lib/net10.0/Npgsql.dll
  xunit.abstractions/2.0.3/lib/netstandard2.0/xunit.abstractions.dll
  xunit.assert/2.9.3/lib/net6.0/xunit.assert.dll
  xunit.extensibility.core/2.9.3/lib/netstandard1.1/xunit.core.dll
  xunit.extensibility.execution/2.9.3/lib/netstandard1.1/xunit.execution.dotnet.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/9.0.15/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.6/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
@@ -272,11 +268,11 @@ TestBase.cs
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/
- microsoft.extensions.logging.abstractions/9.0.0/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll
+ microsoft.extensions.logging.abstractions/10.0.0/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll
  xunit.analyzers/1.18.0/analyzers/dotnet/cs/
   xunit.analyzers.dll
   xunit.analyzers.fixes.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.202/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_9_default.globalconfig
-obj/Debug/net9.0/Npgsql.AgeTests.GeneratedMSBuildEditorConfig.editorconfig
+<DOTNET>/sdk/10.0.202/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+obj/Debug/net10.0/Npgsql.AgeTests.GeneratedMSBuildEditorConfig.editorconfig

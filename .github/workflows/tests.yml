@@ -19,8 +19,8 @@ jobs:
             type: apache
           - age_image: release_PG17_1.6.0
             type: apache
-          - age_image: 16-bookworm-4
-            type: cnpg
+          - age_image: release_PG18_1.7.0
+            type: apache
           - age_image: 16-1.5.0-standard-bookworm
             type: cnpg
           - age_image: 16-1.5.0-standard-trixie
@@ -30,6 +30,8 @@ jobs:
           - age_image: 16-1.6.0-standard-trixie
             type: cnpg
           - age_image: 17-1.6.0-standard-trixie
+            type: cnpg
+          - age_image: 18-1.7.0-standard-trixie
             type: cnpg
     steps:
       - name: Checkout
@@ -95,9 +97,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            6.0.x
             8.0.x
             9.0.x
+            10.0.x
 
       - name: Restore dependencies
         run: dotnet restore

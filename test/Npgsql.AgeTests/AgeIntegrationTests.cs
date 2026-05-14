@@ -1,8 +1,5 @@
-using System.Text.Json;
 using Npgsql.Age;
-using Npgsql.Age.Internal;
 using Npgsql.Age.Types;
-using NpgsqlTypes;
 
 namespace Npgsql.AgeTests;
 
@@ -207,11 +204,11 @@ $$) as (value agtype);",
         await DropTempGraphAsync(graphName);
     }
 
-    // This test only works on the old 16-bookworm-4 CNPG image
-    // It shouldn't work ...
+    // It shouldn't work ... but it does because of a quirk in how AGE 1.5.0 parses string literals to agtype,
+    // which was changed in later versions to be more strict and require the explicit 'cstring' cast for this to work.
     // The right way to do this is to use '{\"bignumber\":5e24}'::cstring::agtype
-    /* [Fact]
-    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
+    [Fact(Skip = "Does not work with AGE 1.6.0 and above")]
+    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work_Age_1_5()
     {
         var graphName = await CreateTempGraphAsync();
         await using var connection = await DataSource.OpenConnectionAsync();
@@ -230,10 +227,10 @@ $$) as (value agtype);",
         Assert.Equal(5e24, agResult?.GetDouble());
 
         await DropTempGraphAsync(graphName);
-    } */
+    }
 
-    [Fact]
-    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
+    [Fact(Skip = "Does not work with AGE 1.5.0")]
+    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work_Age_1_6()
     {
         var graphName = await CreateTempGraphAsync();
         await using var connection = await DataSource.OpenConnectionAsync();
@@ -399,7 +396,7 @@ $$) as (value agtype);",
         Assert.Equal("test", stringResult?.GetString());
         Assert.Equal(42, intResult?.GetInt32());
         Assert.Equal(3.14, doubleResult?.GetDouble());
-        Assert.Equal(true, boolResult?.GetBoolean());
+        Assert.True(boolResult?.GetBoolean());
         Assert.Equal(new object[] { 1, 2, 3 }, listResult?.GetList());
 
         await DropTempGraphAsync(graphName);
@@ -637,5 +634,139 @@ $$) as (value agtype);",
         Assert.Contains("SQL", skills.Cast<object>());
 
         await DropTempGraphAsync(graphName);
+    }
+
+    [Fact]
+    public async Task GetArray_Should_ReturnTypedElements()
+    {
+        var graphname = await CreateTempGraphAsync();
+
+        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
+    RETURN [1, 'hello', true, NULL]
+$$) as (value agtype);",
+            connection
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+        Assert.True(await dataReader.ReadAsync());
+        var agResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+
+        Assert.NotNull(agResult);
+        Assert.True(agResult.Value.IsArray);
+        var elements = agResult.Value.GetArray().ToList();
+        Assert.Equal(4, elements.Count);
+        Assert.Equal("1", elements[0].GetString());
+        Assert.Equal("hello", elements[1].GetString());
+        Assert.Equal("true", elements[2].GetString());
+        Assert.True(elements[3].IsNull);
+
+        await DropTempGraphAsync(graphname);
+    }
+
+    [Fact]
+    public async Task GetArray_OnVertexArray_Should_PreserveVertexType()
+    {
+        var graphname = await CreateTempGraphAsync();
+
+        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
+    CREATE (a:Person {{name: 'Alice', age: 30}})
+    CREATE (b:Person {{name: 'Bob', age: 25}})
+    WITH [a, b] AS vertices
+    RETURN vertices
+$$) as (value agtype);",
+            connection
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+        Assert.True(await dataReader.ReadAsync());
+        var agResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+
+        Assert.NotNull(agResult);
+        Assert.True(agResult.Value.IsArray);
+        var elements = agResult.Value.GetArray().ToList();
+        Assert.Equal(2, elements.Count);
+        Assert.True(elements[0].IsVertex);
+        Assert.True(elements[1].IsVertex);
+        Assert.Equal("Alice", elements[0].GetVertex().Properties["name"]);
+        Assert.Equal("Bob", elements[1].GetVertex().Properties["name"]);
+
+        await DropTempGraphAsync(graphname);
+    }
+
+    [Fact]
+    public async Task GetArray_OnNestedArray_Should_SupportRecursion()
+    {
+        var graphname = await CreateTempGraphAsync();
+
+        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
+    RETURN [[1, 2], [3, 4]]
+$$) as (value agtype);",
+            connection
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+        Assert.True(await dataReader.ReadAsync());
+        var agResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+
+        Assert.NotNull(agResult);
+        Assert.True(agResult.Value.IsArray);
+        var outer = agResult.Value.GetArray().ToList();
+        Assert.Equal(2, outer.Count);
+        var inner = outer[0].GetArray().ToList();
+        Assert.Equal(2, inner.Count);
+        Assert.Equal("1", inner[0].GetString());
+        Assert.Equal("2", inner[1].GetString());
+
+        await DropTempGraphAsync(graphname);
+    }
+
+    [Fact]
+    public async Task GetMap_Should_ReturnCorrectDictionary()
+    {
+        var graphname = await CreateTempGraphAsync();
+
+        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
+    RETURN {{key: 'value', num: 42}}
+$$) as (value agtype);",
+            connection
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+        Assert.True(await dataReader.ReadAsync());
+        var agResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+
+        Assert.NotNull(agResult);
+        Assert.True(agResult.Value.IsMap);
+        Assert.False(agResult.Value.IsArray);
+        var map = agResult.Value.GetMap();
+        Assert.Equal("value", map["key"]);
+        Assert.Equal(42, map["num"]);
+
+        await DropTempGraphAsync(graphname);
+    }
+
+    [Fact]
+    public async Task IsNull_Should_ReturnTrue_ForNullReturnedByAge()
+    {
+        var graphname = await CreateTempGraphAsync();
+
+        await using var connection = await DataSource.OpenConnectionAsync();
+        await using var command = new NpgsqlCommand(
+            $@"SELECT * FROM ag_catalog.cypher('{graphname}', $$
+    RETURN NULL
+$$) as (value agtype);",
+            connection
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+        Assert.True(await dataReader.ReadAsync());
+        var agResult = await dataReader.GetFieldValueAsync<Agtype?>(0);
+
+        Assert.Null(agResult);
+
+        await DropTempGraphAsync(graphname);
     }
 }
