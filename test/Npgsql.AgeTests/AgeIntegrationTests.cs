@@ -204,11 +204,11 @@ $$) as (value agtype);",
         await DropTempGraphAsync(graphName);
     }
 
-    // This test only works on the old 16-bookworm-4 CNPG image
-    // It shouldn't work ...
+    // It shouldn't work ... but it does because of a quirk in how AGE 1.5.0 parses string literals to agtype,
+    // which was changed in later versions to be more strict and require the explicit 'cstring' cast for this to work.
     // The right way to do this is to use '{\"bignumber\":5e24}'::cstring::agtype
-    /* [Fact]
-    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
+    [Fact(Skip = "Does not work with AGE 1.6.0 and above")]
+    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work_Age_1_5()
     {
         var graphName = await CreateTempGraphAsync();
         await using var connection = await DataSource.OpenConnectionAsync();
@@ -227,10 +227,10 @@ $$) as (value agtype);",
         Assert.Equal(5e24, agResult?.GetDouble());
 
         await DropTempGraphAsync(graphName);
-    } */
+    }
 
     [Fact(Skip = "Does not work with AGE 1.5.0")]
-    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
+    public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work_Age_1_6()
     {
         var graphName = await CreateTempGraphAsync();
         await using var connection = await DataSource.OpenConnectionAsync();
