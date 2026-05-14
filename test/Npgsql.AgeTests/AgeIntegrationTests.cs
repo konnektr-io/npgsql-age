@@ -229,7 +229,7 @@ $$) as (value agtype);",
         await DropTempGraphAsync(graphName);
     } */
 
-    [Fact]
+    [Fact(Skip = "Does not work with AGE 1.5.0")]
     public async Task ExecuteCypherQueryAsync_WithStringToAgtypeMap_Should_Work()
     {
         var graphName = await CreateTempGraphAsync();
