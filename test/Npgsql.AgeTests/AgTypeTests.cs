@@ -1,7 +1,5 @@
 ﻿using System.Globalization;
-using System.Linq;
 using Npgsql.Age.Types;
-using Xunit;
 
 namespace Npgsql.AgeTests;
 

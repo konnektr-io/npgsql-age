@@ -1,8 +1,5 @@
-using System.Text.Json;
 using Npgsql.Age;
-using Npgsql.Age.Internal;
 using Npgsql.Age.Types;
-using NpgsqlTypes;
 
 namespace Npgsql.AgeTests;
 

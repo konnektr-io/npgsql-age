@@ -251,7 +251,8 @@ Types/
 <NUGET>/
  microsoft.extensions.dependencyinjection.abstractions/10.0.0/lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
  microsoft.extensions.logging.abstractions/10.0.0/lib/net10.0/Microsoft.Extensions.Logging.Abstractions.dll
- npgsql/10.0.0/lib/net10.0/Npgsql.dll
+ npgsql/10.0.2/lib/net10.0/Npgsql.dll
+ system.io.hashing/10.0.8/lib/net10.0/System.IO.Hashing.dll
 
 [analyzerReferences]
 <DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.6/analyzers/dotnet/cs/
@@ -509,8 +510,9 @@ Types/
 <NUGET>/
  microsoft.extensions.dependencyinjection.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
  microsoft.extensions.logging.abstractions/8.0.0/lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
- npgsql/10.0.0/lib/net8.0/Npgsql.dll
+ npgsql/10.0.2/lib/net8.0/Npgsql.dll
  system.diagnostics.diagnosticsource/9.0.11/lib/net8.0/System.Diagnostics.DiagnosticSource.dll
+ system.io.hashing/10.0.8/lib/net8.0/System.IO.Hashing.dll
 
 [analyzerReferences]
 <DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.26/analyzers/dotnet/cs/
@@ -770,7 +772,8 @@ Types/
 <NUGET>/
  microsoft.extensions.dependencyinjection.abstractions/9.0.0/lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
  microsoft.extensions.logging.abstractions/9.0.0/lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll
- npgsql/10.0.0/lib/net9.0/Npgsql.dll
+ npgsql/10.0.2/lib/net9.0/Npgsql.dll
+ system.io.hashing/10.0.8/lib/net9.0/System.IO.Hashing.dll
 
 [analyzerReferences]
 <DOTNET>/packs/Microsoft.NETCore.App.Ref/9.0.15/analyzers/dotnet/cs/
