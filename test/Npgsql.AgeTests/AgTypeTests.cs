@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Linq;
 using Npgsql.Age.Types;
 using Xunit;
 
@@ -348,6 +349,172 @@ public class AgTypeTests
         var agtype = new Agtype($"[{vertices[0]}, {edge}, {vertices[1]}]");
 
         Assert.Throws<FormatException>(() => agtype.GetPath());
+    }
+
+    #endregion
+
+    #region IsArray
+
+    [Fact]
+    public void IsArray_Should_ReturnTrue_For_ValidArrays()
+    {
+        Assert.True(new Agtype("[1, 2, 3]").IsArray);
+        Assert.True(new Agtype("[]").IsArray);
+    }
+
+    [Fact]
+    public void IsArray_Should_ReturnTrue_For_VertexArray()
+    {
+        Assert.True(new Agtype("[{}::vertex]").IsArray);
+    }
+
+    [Fact]
+    public void IsArray_Should_ReturnFalse_For_NonArrays()
+    {
+        Assert.False(new Agtype("{}").IsArray);
+        Assert.False(new Agtype("{}::vertex").IsArray);
+        Assert.False(new Agtype("[1, 2, 3]::path").IsArray);
+    }
+
+    #endregion
+
+    #region IsNull
+
+    [Fact]
+    public void IsNull_Should_ReturnTrue_For_Null()
+    {
+        Assert.True(new Agtype("null").IsNull);
+    }
+
+    [Fact]
+    public void IsNull_Should_ReturnFalse_For_NonNull()
+    {
+        Assert.False(new Agtype("1").IsNull);
+        Assert.False(new Agtype("\"string\"").IsNull);
+        Assert.False(new Agtype("true").IsNull);
+        Assert.False(new Agtype("[]").IsNull);
+        Assert.False(new Agtype("{}").IsNull);
+    }
+
+    #endregion
+
+    #region IsMap
+
+    [Fact]
+    public void IsMap_Should_ReturnTrue_For_PlainObject()
+    {
+        Assert.True(new Agtype("{}").IsMap);
+        Assert.True(new Agtype("{\"a\": 1}").IsMap);
+    }
+
+    [Fact]
+    public void IsMap_Should_ReturnFalse_For_VertexEdgeAndNonObjects()
+    {
+        Assert.False(new Agtype("{}::vertex").IsMap);
+        Assert.False(new Agtype("{}::edge").IsMap);
+        Assert.False(new Agtype("[1, 2, 3]").IsMap);
+        Assert.False(new Agtype("\"string\"").IsMap);
+        Assert.False(new Agtype("null").IsMap);
+    }
+
+    #endregion
+
+    #region GetArray()
+
+    [Fact]
+    public void GetArray_Should_ReturnTypedElements_For_Primitives()
+    {
+        var agtype = new Agtype("[1, \"hello\", true, null]");
+        var elements = agtype.GetArray().ToList();
+        Assert.Equal(4, elements.Count);
+        Assert.Equal("1", elements[0].GetString());
+        Assert.Equal("hello", elements[1].GetString());
+        Assert.Equal("true", elements[2].GetString());
+        Assert.True(elements[3].IsNull);
+    }
+
+    [Fact]
+    public void GetArray_Elements_Should_PreserveVertexEdgeFlags()
+    {
+        var agtype = new Agtype("[{}::vertex, {}::edge]");
+        var elements = agtype.GetArray().ToList();
+        Assert.True(elements[0].IsVertex);
+        Assert.True(elements[1].IsEdge);
+    }
+
+    [Fact]
+    public void GetArray_OnVertexArray_Should_ReturnVerticesWithCorrectProperties()
+    {
+        var vertex = new Vertex
+        {
+            Id = new(2343953235),
+            Label = "Person",
+            Properties = new() { { "name", "Emmanuel" } },
+        };
+        var agtype = new Agtype($"[{vertex}]");
+        var elements = agtype.GetArray().ToList();
+        Assert.Single(elements);
+        Assert.True(elements[0].IsVertex);
+        var parsed = elements[0].GetVertex();
+        Assert.Equal(vertex.Id, parsed.Id);
+        Assert.Equal(vertex.Label, parsed.Label);
+        Assert.Equal(vertex.Properties, parsed.Properties);
+    }
+
+    [Fact]
+    public void GetArray_OnNestedArray_Should_SupportNestedGetArray()
+    {
+        var agtype = new Agtype("[[1, 2], [3, 4]]");
+        var outer = agtype.GetArray().ToList();
+        Assert.Equal(2, outer.Count);
+        var inner = outer[0].GetArray().ToList();
+        Assert.Equal(2, inner.Count);
+        Assert.Equal("1", inner[0].GetString());
+        Assert.Equal("2", inner[1].GetString());
+    }
+
+    [Fact]
+    public void GetArray_OnEmptyArray_Should_ReturnEmpty()
+    {
+        var agtype = new Agtype("[]");
+        Assert.Empty(agtype.GetArray());
+    }
+
+    [Fact]
+    public void GetArray_OnNullContainingArray_Should_HaveIsNullTrue()
+    {
+        var agtype = new Agtype("[null, 1]");
+        var elements = agtype.GetArray().ToList();
+        Assert.True(elements[0].IsNull);
+        Assert.False(elements[1].IsNull);
+    }
+
+    [Fact]
+    public void GetArray_Should_ThrowFormatException_When_NotArray()
+    {
+        var agtype = new Agtype("{}");
+        Assert.Throws<FormatException>(() => agtype.GetArray());
+    }
+
+    #endregion
+
+    #region GetMap()
+
+    [Fact]
+    public void GetMap_Should_ReturnCorrectDictionary_For_PlainObject()
+    {
+        var agtype = new Agtype("{\"a\": 1, \"b\": \"hello\"}");
+        var map = agtype.GetMap();
+        Assert.Equal(2, map.Count);
+        Assert.Equal(1, map["a"]);
+        Assert.Equal("hello", map["b"]);
+    }
+
+    [Fact]
+    public void GetMap_Should_ThrowFormatException_When_NotMap()
+    {
+        var agtype = new Agtype("[1, 2, 3]");
+        Assert.Throws<FormatException>(() => agtype.GetMap());
     }
 
     #endregion

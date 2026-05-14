@@ -205,12 +205,115 @@ namespace Npgsql.Age.Types
         /// </returns>
         public List<object?> GetList(bool readFloatingPointLiterals = true)
         {
-            var result = JsonSerializer.Deserialize<List<object?>>(
-                _value,
-                SerializerOptions.Default
-            );
-
-            return result!;
+            var result = new List<object?>();
+            foreach (var element in GetArray())
+            {
+                if (element.IsNull)
+                {
+                    result.Add(null);
+                }
+                else if (element.IsVertex)
+                {
+                    result.Add(element.GetVertex());
+                }
+                else if (element.IsEdge)
+                {
+                    result.Add(element.GetEdge());
+                }
+                else if (element.IsMap)
+                {
+                    result.Add(element.GetMap());
+                }
+                else if (element.IsArray)
+                {
+                    result.Add(element.GetList(readFloatingPointLiterals));
+                }
+                else if (element.IsJsonString)
+                {
+                    var str = element.GetString();
+                    if (readFloatingPointLiterals)
+                    {
+                        if (str.Equals("-Infinity", StringComparison.OrdinalIgnoreCase))
+                            result.Add(double.NegativeInfinity);
+                        else if (str.Equals("Infinity", StringComparison.OrdinalIgnoreCase))
+                            result.Add(double.PositiveInfinity);
+                        else if (str.Equals("NaN", StringComparison.OrdinalIgnoreCase))
+                            result.Add(double.NaN);
+                        else
+                            result.Add(str);
+                    }
+                    else
+                    {
+                        result.Add(str);
+                    }
+                }
+                else
+                {
+                    var str = element.GetString();
+                    if (readFloatingPointLiterals)
+                    {
+                        if (str.Equals("-Infinity", StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.Add(double.NegativeInfinity);
+                            continue;
+                        }
+                        if (str.Equals("Infinity", StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.Add(double.PositiveInfinity);
+                            continue;
+                        }
+                        if (str.Equals("NaN", StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.Add(double.NaN);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if (
+                            str.Equals("-Infinity", StringComparison.OrdinalIgnoreCase)
+                            || str.Equals("Infinity", StringComparison.OrdinalIgnoreCase)
+                            || str.Equals("NaN", StringComparison.OrdinalIgnoreCase)
+                        )
+                        {
+                            result.Add(str);
+                            continue;
+                        }
+                    }
+                    if (
+                        int.TryParse(
+                            str,
+                            NumberStyles.Integer,
+                            CultureInfo.InvariantCulture,
+                            out int intVal
+                        )
+                    )
+                        result.Add(intVal);
+                    else if (
+                        long.TryParse(
+                            str,
+                            NumberStyles.Integer,
+                            CultureInfo.InvariantCulture,
+                            out long longVal
+                        )
+                    )
+                        result.Add(longVal);
+                    else if (
+                        double.TryParse(
+                            str,
+                            NumberStyles.Float,
+                            CultureInfo.InvariantCulture,
+                            out double doubleVal
+                        )
+                    )
+                        result.Add(doubleVal);
+                    else if (bool.TryParse(str, out bool boolVal))
+                        result.Add(boolVal);
+                    else
+                        result.Add(str);
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -311,7 +414,9 @@ namespace Npgsql.Age.Types
                     SerializerOptions.PathSerializer
                 );
 
-                return path is null ? throw new Exception("Path cannot be null.") : new Path(path);
+                return path is null
+                    ? throw new FormatException("Path cannot be null.")
+                    : new Path(path);
             }
             catch (JsonException e)
             {
@@ -342,6 +447,12 @@ namespace Npgsql.Age.Types
         public bool IsMap => _value.StartsWith('{') && _value.EndsWith('}') && !IsVertex && !IsEdge;
 
         /// <summary>
+        /// Returns <see langword="true"/> if the raw agtype value is a JSON string
+        /// (enclosed in double quotes).
+        /// </summary>
+        internal bool IsJsonString => _value.StartsWith('"') && _value.EndsWith('"');
+
+        /// <summary>
         /// Returns the elements of the agtype array as individual <see cref="Agtype"/> values,
         /// preserving type annotations so that <see cref="IsVertex"/>, <see cref="IsEdge"/>,
         /// and other type-check properties work correctly on each element.
@@ -356,6 +467,11 @@ namespace Npgsql.Age.Types
                     "Cannot convert agtype to array. Agtype is not a valid array."
                 );
 
+            return GetArrayCore();
+        }
+
+        private IEnumerable<Agtype> GetArrayCore()
+        {
             // Walk the raw string tracking JSON nesting depth and string literals,
             // splitting on top-level commas. This preserves ::vertex / ::edge suffixes
             // on each element so the returned Agtype values keep their type information.
@@ -458,6 +574,9 @@ namespace Npgsql.Age.Types
         public static explicit operator Vertex(Agtype agtype) => agtype.GetVertex();
 
         public static explicit operator Edge(Agtype agtype) => agtype.GetEdge();
+
+        public static explicit operator Dictionary<string, object?>(Agtype agtype) =>
+            agtype.GetMap();
         #endregion
     }
 }
