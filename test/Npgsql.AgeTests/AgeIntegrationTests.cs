@@ -284,7 +284,23 @@ RETURN p"
         );
         var str = (string)(Agtype)(await command.ExecuteScalarAsync())!;
 
-        Assert.Equal("This\u00A0is a and/or string\r\n\tw\\some 'special' \"characters\" and \\\"escaped quotes\\\".", str);
+        if (await AgeVersionKeepsChainedCastsAsText())
+        {
+            // AGE 1.8.0+ evaluates the cast chain differently: '...'::jsonb::agtype inside a
+            // Cypher expression no longer parses the JSON, so the result is an agtype string
+            // holding the raw JSON source, with escapes left literal (\u00A0, \/ and \").
+            Assert.Equal(
+                "\"This\\u00A0is a and\\/or string\\r\\n\\tw\\\\some 'special' \\\"characters\\\" and \\\\\\\"escaped quotes\\\\\\\".\"",
+                str
+            );
+        }
+        else
+        {
+            Assert.Equal(
+                "This\u00A0is a and/or string\r\n\tw\\some 'special' \"characters\" and \\\"escaped quotes\\\".",
+                str
+            );
+        }
         await DropTempGraphAsync(graphName);
     }
 
@@ -341,15 +357,34 @@ RETURN p"
         Assert.Equal(new GraphId(1), edge.EndId);
         Assert.Equal("edge_label", edge.Label);
         Assert.True(edge.Properties.TryGetValue("m", out var propM));
-        Assert.Equal(new object[]
+        if (await AgeVersionKeepsChainedCastsAsText())
         {
-            new Dictionary<string, object>() {
-                { @"Key `is` ""special""", "value"},
-            },
-            new Dictionary<string, object>() {
-                { "This is a string\r\n\tw\\some 'special' \"characters\" and \\\"escaped quotes\\\".", "value" }
-            }
-        }, Assert.IsType<List<object>>(propM));
+            // AGE 1.8.0+ evaluates the cast chain differently: the ::jsonb::agtype element
+            // is no longer parsed into a map, so it arrives as the raw JSON object text.
+            Assert.Equal(
+                new object[]
+                {
+                    new Dictionary<string, object>()
+                    {
+                        { @"Key `is` ""special""", "value"},
+                    },
+                    @"{""This is a string\r\n\tw\\some 'special' \""characters\"" and \\\""escaped quotes\\\""."": ""value""}",
+                },
+                Assert.IsType<List<object>>(propM)
+            );
+        }
+        else
+        {
+            Assert.Equal(new object[]
+            {
+                new Dictionary<string, object>() {
+                    { @"Key `is` ""special""", "value"},
+                },
+                new Dictionary<string, object>() {
+                    { "This is a string\r\n\tw\\some 'special' \"characters\" and \\\"escaped quotes\\\".", "value" }
+                }
+            }, Assert.IsType<List<object>>(propM));
+        }
 
         var vertex2 = Assert.IsType<Vertex>(path.Segments[2]);
         Assert.Equal(new GraphId(1), vertex2.Id);
@@ -682,9 +717,23 @@ RETURN v + ' -> ' + replace(v, '""', '$') as p",
             var mainResult = await dataReader.GetFieldValueAsync<Agtype>(0);
             actual.Add((string)mainResult);
         }
-        var expected = Enumerable.Repeat(@"""characters"" and \""escaped quotes\"" and \\""escaped quotes\\"". -> $characters$ and \$escaped quotes\$ and \\$escaped quotes\\$.", 3).ToList();
-
-        Assert.Equal(expected, actual);
+        if (await AgeVersionKeepsChainedCastsAsText())
+        {
+            // AGE 1.8.0+ evaluates the cast chain differently: the ::jsonb::agtype
+            // element is no longer parsed into a Cypher string, so every row keeps
+            // the raw JSON quoting (and the jsonb element its escapes) undecoded.
+            var expected180 = new List<string>
+            {
+                @"""characters"" and \""escaped quotes\"" and \\""escaped quotes\\"". -> $characters$ and \$escaped quotes\$ and \\$escaped quotes\\$.",
+                @"""\""characters\"" and \\\""escaped quotes\\\"" and \\\\\""escaped quotes\\\\\""."" -> $\$characters\$ and \\\$escaped quotes\\\$ and \\\\\$escaped quotes\\\\\$.$",
+                @"""characters"" and \""escaped quotes\"" and \\""escaped quotes\\"". -> $characters$ and \$escaped quotes\$ and \\$escaped quotes\\$.",
+            };
+            Assert.Equal(expected180, actual);
+        }
+        else
+        {
+            Assert.Equal(Enumerable.Repeat(@"""characters"" and \""escaped quotes\"" and \\""escaped quotes\\"". -> $characters$ and \$escaped quotes\$ and \\$escaped quotes\\$.", 3), actual);
+        }
 
         await DropTempGraphAsync(graphName);
     }
