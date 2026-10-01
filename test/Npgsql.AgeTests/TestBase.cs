@@ -14,6 +14,19 @@ public class TestBase
         return version >= new Version(1, 6);
     }
 
+    /// <summary>
+    /// AGE 1.8.0 changed the order of operations for chained casts inside a Cypher
+    /// expression: <c>'...'::jsonb::agtype</c> now yields an agtype <em>string</em> holding
+    /// the raw JSON source instead of the parsed agtype structure (maps come back as a plain
+    /// string, and escapes such as \u00A0 or \/ are no longer decoded). The standalone cast
+    /// <c>SELECT '...'::jsonb::agtype</c> is unaffected - only the chain inside a query.
+    /// </summary>
+    protected static async Task<bool> AgeVersionKeepsChainedCastsAsText()
+    {
+        var version = await _ageVersion.Value;
+        return version >= new Version(1, 8);
+    }
+
     private static async Task<Version> GetAgeVersionAsync()
     {
         await using var dataSource = new NpgsqlDataSourceBuilder(
