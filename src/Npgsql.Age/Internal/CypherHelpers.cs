@@ -6,6 +6,18 @@ namespace Npgsql.Age.Internal
 {
     internal static class CypherHelpers
     {
+        // Matches the RETURN clause and captures everything up to the next clause keyword
+        // (RETURN/LIMIT/SKIP/ORDER) or the end of the query.
+        //
+        // The terminator must be BOTH preceded by whitespace and a whole word. Without those
+        // two constraints a property whose name merely *starts* with a clause keyword truncated
+        // the capture: "RETURN t.returnPeriod AS period" stopped at the "return" inside
+        // "returnPeriod", leaving the capture as "t." - the column name was then sanitized to an
+        // empty string and the generated SQL became "as ( agtype)", which PostgreSQL rejects with
+        // 42601 "syntax error at or near )". See pg-age-digitaltwins#115.
+        private const string ReturnClausePattern =
+            @"RETURN\s+(.+?)(?=\s+(?:RETURN|LIMIT|SKIP|ORDER)\b|\s*$)";
+
         internal static string GenerateAsPart(string cypher)
         {
             // Pre-process the query to temporarily replace string literals with placeholders
@@ -17,7 +29,7 @@ namespace Npgsql.Age.Internal
             // Extract the return part of the Cypher query using the processed version
             MatchCollection matches = Regex.Matches(
                 processedCypher,
-                @"RETURN\s+(.+?)(?=\s*(?:RETURN|LIMIT|SKIP|ORDER|$))",
+                ReturnClausePattern,
                 RegexOptions.IgnoreCase
             );
 
@@ -45,7 +57,7 @@ namespace Npgsql.Age.Internal
             var originalCypher = cypher.Replace("\n", " ").Replace("\r", " ");
             var originalMatches = Regex.Matches(
                 originalCypher,
-                @"RETURN\s+(.+?)(?=\s*(?:RETURN|LIMIT|SKIP|ORDER|$))",
+                ReturnClausePattern,
                 RegexOptions.IgnoreCase
             );
 
@@ -66,8 +78,23 @@ namespace Npgsql.Age.Internal
                     {
                         var trimmedValue = value.Trim();
 
+                        // Map/array values - a bare literal ("{...}", "[...]") or a projection
+                        // applied to an expression ("t { .prop }", "m { .* }") - resolve to the
+                        // alias when given, otherwise to a generic "result" column. Without this a
+                        // projection fell through to the generic name derivation and produced
+                        // meaningless names like "returnPeriod__" from "t { .returnPeriod }".
+                        var isProjection = Regex.IsMatch(
+                            trimmedValue,
+                            @"\w+\s*\{\s*\.",
+                            RegexOptions.IgnoreCase
+                        );
+
                         // Handle objects and arrays without aliases
-                        if (trimmedValue.StartsWith("{") || trimmedValue.StartsWith("["))
+                        if (
+                            isProjection
+                            || trimmedValue.StartsWith("{")
+                            || trimmedValue.StartsWith("[")
+                        )
                         {
                             // Check for alias
                             var aliasMatch = Regex.Match(
@@ -148,6 +175,16 @@ namespace Npgsql.Age.Internal
                         else if (sanitizedValue.Any(char.IsUpper) || sanitizedValue.StartsWith("$"))
                         {
                             sanitizedValue = $"\"{sanitizedValue}\"";
+                        }
+
+                        // Defensive: a blank name would render as "as ( agtype)" / "as ()" -
+                        // always invalid SQL (42601). Falling back to a positional name keeps the
+                        // query executable instead of failing with a bare syntax error.
+                        if (string.IsNullOrWhiteSpace(sanitizedValue))
+                        {
+                            sanitizedValue = string.IsNullOrWhiteSpace(trimmedValue)
+                                ? $"column{index + 1}"
+                                : "result";
                         }
 
                         return $"{sanitizedValue} agtype";

@@ -1006,4 +1006,103 @@ $$) as (value agtype);",
 
         await DropTempGraphAsync(graphname);
     }
+
+    // Regression tests for pg-age-digitaltwins#115: GenerateAsPart emitted an empty
+    // column-definition list for scalar and partial map-projection return items, producing
+    // "as ( agtype)" which PostgreSQL rejects with 42601 "syntax error at or near )".
+    // These execute the generated SQL end-to-end against a real AGE graph.
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_ScalarReturnWithAlias_Should_Work()
+    {
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        await using (
+            var setup = connection.CreateCypherCommand(
+                graphName,
+                "CREATE (:Twin { `$dtId`: 't1', name: 'room1', returnPeriod: 'P1D' })"
+            )
+        )
+        {
+            await setup.ExecuteNonQueryAsync();
+        }
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "MATCH (t:Twin) RETURN t.returnPeriod AS period"
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(await dataReader.ReadAsync());
+        var value = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        Assert.Equal("P1D", value?.GetString());
+
+        await DropTempGraphAsync(graphName);
+    }
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_PartialProjectionWithAlias_Should_Work()
+    {
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        await using (
+            var setup = connection.CreateCypherCommand(
+                graphName,
+                "CREATE (:Twin { `$dtId`: 't1', name: 'room1', returnPeriod: 'P1D' })"
+            )
+        )
+        {
+            await setup.ExecuteNonQueryAsync();
+        }
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "MATCH (t:Twin) RETURN t { .returnPeriod } AS twin"
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(await dataReader.ReadAsync());
+        var value = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        Assert.Equal("P1D", (string?)value?.GetMap()["returnPeriod"]);
+
+        await DropTempGraphAsync(graphName);
+    }
+
+    [Fact]
+    public async Task ExecuteCypherQueryAsync_ScalarReturnWithClausePrefixedProperty_Should_Work()
+    {
+        // "returnPeriod" starts with the RETURN keyword and "limit" with LIMIT - both used to
+        // truncate the derived column name to an empty string.
+        var graphName = await CreateTempGraphAsync();
+        await using var connection = await DataSource.OpenConnectionAsync();
+
+        await using (
+            var setup = connection.CreateCypherCommand(
+                graphName,
+                "CREATE (:Twin { `$dtId`: 't1', limit: 10, returnPeriod: 'P1D' })"
+            )
+        )
+        {
+            await setup.ExecuteNonQueryAsync();
+        }
+
+        await using var command = connection.CreateCypherCommand(
+            graphName,
+            "MATCH (t:Twin) RETURN t.limit AS lim, t.returnPeriod AS period"
+        );
+        await using var dataReader = await command.ExecuteReaderAsync();
+
+        Assert.NotNull(dataReader);
+        Assert.True(await dataReader.ReadAsync());
+        var limitValue = await dataReader.GetFieldValueAsync<Agtype?>(0);
+        var periodValue = await dataReader.GetFieldValueAsync<Agtype?>(1);
+        Assert.Equal(10, limitValue?.GetInt32());
+        Assert.Equal("P1D", periodValue?.GetString());
+
+        await DropTempGraphAsync(graphName);
+    }
 }
